@@ -1,0 +1,69 @@
+load_set:
+  train: 0                      # start new training: 0 / load saved training: 1
+  sim: 0                        # start new simulation: 0 / load current one and refine: 1 / LLR simulation: 2
+  gpu: 1                        # training with GPU?, default: 1
+  prec: float64                 # computation accuracy: float16, float32, or float64 (default)
+  sv_ext: npz                   # save format
+  fn_train: trainhist_          # name of training history file
+  fn_sim: RES_                  # name of simulation file
+
+sim_set:
+  algo: CMDNet                  # MAP, MF, LS, MMSE, MFVIseq, MFVIpar, AMP, SDR, CMD, CMD_fixed, DetNet, MMNet, OAMPNet, DNN
+  fn_ext: '_binary_online100_snr8_Ne100000_test' # Filename extension, e.g., _binary_tau0.1, _snr13_36, _defsnr, _binary_online100_snr8_Ne100000, _online100_snr8_Ne100000_NL2NW512
+  path: curves                  # path of simulation files
+  Nt: 64                        # number of transmit antennas
+  Nr: 64                        # number of receive antennas
+  L: 64                         # number of algorithm iterations
+  Mod: QPSK                     # modulation: e.g., BPSK, QPSK, QAM16, ASK4, not ready: QAM64, ASK8
+  Nbatch: 10000                 # validation batch size, default: 10000
+  rho:
+    - 0                         # 0-1: correlation, 1-360: angular spread
+    - 120                       # cell sector: 120
+    - 0.5                       # antenna distance in wavelenghts: <=0.5
+  ebn0_range:                   # QPSK: -6-36, online: 8
+    - 8                         # Note: LLR evaluation SNR, default 10 dB
+    - 8
+  snr_grid: 1                   # SNR step size
+  Nerr_min: 1000                # minimum number of errors, default: 1000
+  sim_prec: 5.0e-7              # required ber precision, default: 5.0e-7
+  # specific to CMD, AMP, MFVI: 2 classes/binary version (BSPK, QPSK)
+  binopt: 1                     # default: 1
+
+code_set:
+  code: uncoded                 # used code: uncoded, hamming4x7, LDPC16x32, LDPC64x128
+  path: codes                   # path of code files with generator and parity check matrix
+  dec: bp                       # decoder: bp, syn
+  it: 10                        # decoder iterations, e.g., with bp decoding
+  arch: horiz                   # MIMO architecture: vert, horiz
+
+train_set:
+  Nepoch: 100000                # number of total iterations: 0, 100000
+  batch_size: 500               # QPSK: 500, QAM16: 1500
+  val_size: 10000               # 10000
+  ebn0_range:                   # QPSK: 4-27 (SNR: 7-30), QAM16: 10-33, online: 8
+    - 8
+    - 8
+  start_point: load             # starting point: default, linear, const, load
+  it_checkp: 100                # checkpoint iteration, default: 100
+  sv_checkp: 1                  # save checkpoint, default: 1
+  sel_bweights: 0               # Select best weights, default: 0
+  # Training options
+  esteps: 0                     # epochs until early stopping, default: 0, 5000
+  lr_dyn:                       
+    mode: 0                     # learning rate decay if no progress: 1 (only CMDNet), no decay: 0 (default), Piecewise constant learning rate schedule: 2 (Online DNN + CMDNet)
+    boundaries:                 # only for mode 2: Number of optimizer steps/batches for lr change
+      - 1000
+      - 3000
+    values:                     # learning rate values
+      - 1.0e-3
+      - 1.0e-4
+      - 1.0e-5
+  soft: 0                       # training with CE or MSE loss, default: 0 (output probabilities), 1 (symbols)
+  multiloss: 0                  # sum and weight loss of all iteration outputs, default: 0
+  opt: adam                     # optimizer, default: adam, sgd, nadam
+  # Online learning
+  online: 100                   # number of online learning iterations, default: 0 (no online training), online training script: 100/1000
+  # DNN
+  dnnwidth: 512                 # default: Nr (shallow) / 2*Nr (wide) / 10*Nt (Fullycon network), Online training DNN detector intermediate layer width
+  dnndepth: 2                   # default: 2 (small) / 6 (big, Fullycon network), Online training DNN detector intermediate layer number
+  dnnverbose: 2                 # verbose online DNN training: 1, w/o progress bar for simulations: 2, silent: 0, auto
