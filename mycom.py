@@ -317,7 +317,7 @@ def mimoequ_decoding(fr, dataobj, sim_par, mimo_arch, H, decoder, it_dec):
     decoder: Decoder type ('syn': syndrome, 'bp': belief propagation)
     it_dec: Number of decoding iterations
     '''
-    k = H.shape[0] # Code word length
+    k = H.shape[1]          # Code word length
     
     llr_c2, _ = symprob2llr(fr, sim_par.mod.M)   # TODO: a-posteriori, but extrinsic information (a-posteriori / a-priori) required?
     llr_c_perm = mimo_decoding(llr_c2, k, sim_par.Nt, sim_par.mod.M, mimo_arch)
@@ -326,7 +326,7 @@ def mimoequ_decoding(fr, dataobj, sim_par, mimo_arch, H, decoder, it_dec):
     if decoder == 'syn':
         c0 = (llr_c < 0) * 1
         [cr, ur] = hard_decoder(c0, H)
-        bp_out = [] # Placeholder
+        bp_out = []         # Placeholder
 
     if decoder == 'bp':
         [bp_out, cr, ur] = bp_decoder(llr_c, H, it_dec, 0)

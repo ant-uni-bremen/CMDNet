@@ -1,6 +1,6 @@
 load_set:
-  train: 0                      # start new training: 0 / load saved training: 1
-  sim: 0                        # start new simulation: 0 / load current one and refine: 1 / LLR simulation: 2
+  train: 1                      # start new training: 0 / load saved training: 1
+  sim: 2                        # start new simulation: 0 / load current one and refine: 1 / LLR simulation: 2
   gpu: 1                        # training with GPU?, default: 1
   prec: float64                 # computation accuracy: float16, float32, or float64 (default)
   sv_ext: npz                   # save format
@@ -8,8 +8,8 @@ load_set:
   fn_sim: RES_                  # name of simulation file
 
 sim_set:
-  algo: CMDNet                  # MAP, MF, LS, MMSE, MFVIseq, MFVIpar, AMP, SDR, CMD, CMD_fixed, DetNet, MMNet, OAMPNet, DNN
-  fn_ext: '_binary_tau0.1_test' # Filename extension, e.g., _binary_tau0.1, _snr13_36, _defsnr, _binary_online100_snr8_Ne100000, _online100_snr8_Ne100000_NL2NW512
+  algo: CMD                     # MAP, MF, LS, MMSE, MFVIseq, MFVIpar, AMP, SDR, CMD, CMD_fixed, DetNet, MMNet, OAMPNet, DNN
+  fn_ext: '_binary_tau0.1'      # Filename extension, e.g., _binary_tau0.1, _snr13_36, _defsnr, _binary_online100_snr8_Ne100000, _online100_snr8_Ne100000_NL2NW512
   path: curves                  # path of simulation files
   Nt: 64                        # number of transmit antennas
   Nr: 64                        # number of receive antennas
@@ -21,7 +21,7 @@ sim_set:
     - 120                       # cell sector: 120
     - 0.5                       # antenna distance in wavelenghts: <=0.5
   ebn0_range:                   # QPSK: -6-36, online: 8
-    - -6                        # Note: LLR evaluation SNR, default 10 dB
+    - 10                        # Note: LLR evaluation SNR, default 10 dB
     - 36
   snr_grid: 1                   # SNR step size, default: 1
   Nerr_min: 1000                # minimum number of errors, default: 1000
@@ -37,7 +37,7 @@ code_set:
   arch: horiz                   # MIMO architecture: vert, horiz
 
 train_set:
-  Nepoch: 100000                # number of total iterations: 0, 100000
+  Nepoch: 0                     # number of total iterations: 0, 100000
   batch_size: 500               # QPSK: 500, QAM16: 1500
   val_size: 10000               # 10000
   ebn0_range:                   # QPSK: 4-27 (SNR: 7-30), QAM16: 10-33, online: 8

@@ -671,17 +671,22 @@ class data_gen_mimo2():
 
 
 
+
+
+
+
+
 if __name__ == '__main__':
 #     my_func_main()
 # def my_func_main():
 
     # Set working directory to script directory
     path0 = os.path.dirname(os.path.abspath(__file__))	# Path of script being executed
-    os.chdir(path0)                                     
+    os.chdir(path0)
     
 
     # Load settings
-    settings_file = "sim_settings.yaml"         # sim_settings.yaml, sim_settings_llr.yaml, sim_settings_online.yaml
+    settings_file = "sim_settings.yaml"         # sim_settings.yaml, sim_settings_llr.yaml, sim_settings_online.yaml, sim_settings_code.yaml
 
     with open(settings_file, 'r') as stream:
         set_dict = yaml.safe_load(stream)
@@ -832,7 +837,7 @@ if __name__ == '__main__':
     perf_meas = mf.performance_measures(sim_set['Nerr_min'], it_max, sel_crit)
     if load_set['sim'] == 1:
         perf_meas.load_results(saveobj.load(fn.pathfile))
-
+    
     
     
     
@@ -914,6 +919,7 @@ if __name__ == '__main__':
                         if codeon:
                             [bp_out, cr, ur] = com.mimoequ_decoding(fr, dataobj, sim_params, code_set['arch'], H, code_set['dec'], code_set['it'])
                             
+
                             perf_meas.cber_calc(dataobj.u, ur)
                             perf_meas.cfer_calc(dataobj.u, ur)
 
@@ -993,7 +999,7 @@ if __name__ == '__main__':
                         opt = opt_sel(opt_name = train_set['opt'], lrs = lrs)
                         dnnmimo.compile(optimizer = opt, loss = loss, metrics = metrics)
                     N_onlinedata = Ne_online * train_set['batch_size']
-                    if N_onlinedata > 100000 * 500 or train_set['esteps'] != 0: # 100000 * 500 -> 23 GB for received signal, but 180-250 GB in total needed...
+                    if N_onlinedata > 100000 * 500 or (N_onlinedata == 100000 * 500 and train_set['dnnverbose'] == 0) or train_set['esteps'] != 0: # 100000 * 500 -> 23 GB for received signal, but 180-250 GB in total needed...
                         # Early stopping, select best weights for online learing DNN, only w.r.t. epochs and thus data generator
                         if train_set['esteps'] == 0:
                             callbacks = []

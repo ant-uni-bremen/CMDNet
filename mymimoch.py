@@ -473,7 +473,7 @@ class dataset_gen():
         m = self.sim_par.mod.m
         M = self.sim_par.mod.M          # N_class
         compl = self.sim_par.mod.compl
-        rho = self.sim_par.rho
+        rho = self.sim_par.rho[0]
         # Code
         arch = self.arch
         G = self.G

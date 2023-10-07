@@ -9,7 +9,7 @@ load_set:
 
 sim_set:
   algo: CMDNet                  # MAP, MF, LS, MMSE, MFVIseq, MFVIpar, AMP, SDR, CMD, CMD_fixed, DetNet, MMNet, OAMPNet, DNN
-  fn_ext: '_binary_tau0.1_test' # Filename extension, e.g., _binary_tau0.1, _snr13_36, _defsnr, _binary_online100_snr8_Ne100000, _online100_snr8_Ne100000_NL2NW512
+  fn_ext: '_binary_online100_snr8_Ne100000_test' # Filename extension, e.g., _binary_tau0.1, _snr13_36, _defsnr, _binary_online100_snr8_Ne100000, _online100_snr8_Ne100000_NL2NW512
   path: curves                  # path of simulation files
   Nt: 64                        # number of transmit antennas
   Nr: 64                        # number of receive antennas
@@ -21,8 +21,8 @@ sim_set:
     - 120                       # cell sector: 120
     - 0.5                       # antenna distance in wavelenghts: <=0.5
   ebn0_range:                   # QPSK: -6-36, online: 8
-    - -6                        # Note: LLR evaluation SNR, default 10 dB
-    - 36
+    - 8                         # Note: LLR evaluation SNR, default 10 dB
+    - 8
   snr_grid: 1                   # SNR step size, default: 1
   Nerr_min: 1000                # minimum number of errors, default: 1000
   sim_prec: 5.0e-7              # required ber precision, default: 5.0e-7
@@ -41,9 +41,9 @@ train_set:
   batch_size: 500               # QPSK: 500, QAM16: 1500
   val_size: 10000               # 10000
   ebn0_range:                   # QPSK: 4-27 (SNR: 7-30), QAM16: 10-33, online: 8
-    - 4
-    - 27
-  start_point: default          # starting point: default, linear, const, load
+    - 8
+    - 8
+  start_point: load             # starting point: default, linear, const, load
   it_checkp: 100                # checkpoint iteration, default: 100
   sv_checkp: 1                  # save checkpoint, default: 1
   sel_bweights: 0               # Select best weights, default: 0
@@ -62,7 +62,7 @@ train_set:
   multiloss: 0                  # sum and weight loss of all iteration outputs, default: 0
   opt: adam                     # optimizer, default: adam, sgd, nadam
   # Online learning
-  online: 0                     # number of online learning iterations, default: 0 (no online training), online training script: 100/1000
+  online: 100                   # number of online learning iterations, default: 0 (no online training), online training script: 100/1000
   # DNN
   dnnwidth: 512                 # default: Nr (shallow) / 2*Nr (wide) / 10*Nt (Fullycon network), Online training DNN detector intermediate layer width
   dnndepth: 2                   # default: 2 (small) / 6 (big, Fullycon network), Online training DNN detector intermediate layer number

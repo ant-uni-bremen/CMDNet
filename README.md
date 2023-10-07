@@ -10,9 +10,9 @@ Source code from scientific research articles [1, 2]:
 
 # Requirements & Usage
 
-This code was tested with TensorFlow 1.15 and cannot be used with TensorFlow 2. A new version was adapted for TensorFlow 2 with joint soft detection and decoding not working as in this version properly. May be due to float64 computation accuracy.
+This code was tested with TensorFlow 1.15 and cannot be used with TensorFlow 2. A new version was adapted for TensorFlow 2 with joint soft detection and decoding not. It does not work with joint decoding as in this version properly: Numerical experiments show that joint CMDNet and decoder performance decreases significantly with float32 instead of float64 computation accuracy.
 
-Run the script as python3 MIMO_detection.py, to reproduce the results of the articles. To do so, set the parameters in the file sim_settings.yaml to the values in the articles.
+Run the script as python3 MIMO_detection.py, to reproduce the results of the articles. To do so, set the parameters in the file sim_settings.yaml to the values in the articles. There are four template setting files with default training settings, joint decoding settings, LLR (Log-Likelihood Ratio) plot settings, and online learning settings.
 
 # Acknowledgements
 
