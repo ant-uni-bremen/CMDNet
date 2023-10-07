@@ -392,7 +392,7 @@ def data_split(data_list, val_split):
 
 
 
-## -------- CMDNet Extensions (Mayb be included in final PhD Thesis) --------------- 
+## -------- CMDNet Extensions (May be included in final PhD Thesis) --------------- 
 
 
 class HyperCMD_graph():
