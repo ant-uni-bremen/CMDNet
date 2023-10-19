@@ -1,6 +1,5 @@
 # CMDNet: Concrete MAP Detection Network
-<!--- [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8006567.svg)](https://doi.org/10.5281/zenodo.8006567)
---->
+[![DOI](https://zenodo.org/badge/696866184.svg)](https://zenodo.org/badge/latestdoi/696866184)
 
 Original CMDNet implementation for Soft MIMO Detection in Tensorflow 1. Also competitive MIMO detectors were implemented in Tensorflow 1 and Numpy.
 
