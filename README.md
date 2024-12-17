@@ -1,4 +1,7 @@
 # MMNet
+
+This MMNet fork was used to evaluate MMNet for the [CMDNet journal article](https://doi.org/10.1109/TCOMM.2021.3114682).
+
 MMNet is a massive MIMO signal detection scheme based on light online learning with neural networks that extends to correlated channel scenarios. 
 
 ## Table of Contents
