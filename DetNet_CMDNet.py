@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+import os
 import tensorflow as tf
 import numpy as np
 import time as tm
-import math
-import sys
-import pickle as pkl
+# import math
+# import sys
+# import pickle as pkl
 
 
 # start here
@@ -29,30 +30,32 @@ snrdb_low_test & snrdb_high_test & num_snr - when testing, num_snr different SNR
 
 By Neev Samuel neev(dot)samuel(at)gmail(dot)com
 """
+
 sess = tf.InteractiveSession()
 
+
 # parameters
-K = 4  # 20
-N = 4  # 30
-snrdb_low = 7.0
-snrdb_high = 14.0
+K = 60  # 20 Nt * 2
+N = 60  # 30 Nr * 2
+snrdb_low = 7  # 10 - 3 # 7
+snrdb_high = 14  # 30 - 3 # 14
 snr_low = 10.0 ** (snrdb_low/10.0)
 snr_high = 10.0 ** (snrdb_high/10.0)
-L = 30  # 90
-v_size = 2*K
-hl_size = 8*K
+L = K  # 90 (Default) #3 * K (VCDN) / K (ShVCDN) (Paper)
+v_size = 2 * K
+hl_size = 8 * K
 startingLearningRate = 0.0001
 decay_factor = 0.97
 decay_step_size = 1000
-train_iter = 20000
-train_batch_size = 5000
+train_iter = 2000  # 20000
+train_batch_size = 500  # 5000
 test_iter = 200
 test_batch_size = 1000
 LOG_LOSS = 1
 res_alpha = 0.9
-num_snr = 6
-snrdb_low_test = 8.0
-snrdb_high_test = 13.0
+num_snr = 18
+snrdb_low_test = 4.0 - 3
+snrdb_high_test = 21.0 - 3  # SNR
 
 """Data generation for train and test phases
 In this example, both functions are the same.
@@ -62,9 +65,27 @@ currently both test and train are over i.i.d gaussian channel.
 """
 
 
+def generate_channel(B, N, K):
+    if K % 2 == 0 and N % 2 == 0:
+        H_re = np.random.randn(B, N/2, K/2)
+        H_im = np.random.randn(B, N/2, K/2)
+        # H_ = np.concatenate(((np.concatenate((H_re, -H_im), -1), np.concatenate((H_im, H_re), -1))), 1) / np.sqrt(N)
+        H_ = np.concatenate(((np.concatenate(
+            (H_re, -H_im), -1), np.concatenate((H_im, H_re), -1))), 1) / np.sqrt(2 * N / 2)
+    else:
+        H_ = np.random.randn(B, N, K) / np.sqrt(N)
+    return H_
+
+# def mimo_channel(Nr, Ntaps, N):
+#    '''Generate N MIMO channel matrices with NtapsxNtaps Rayleigh Fading taps
+#    '''
+#    H = (np.random.normal(0, 1, (N, Nr, Ntaps)) + 1j * np.random.normal(0, 1, (N, Nr, Ntaps))) / np.sqrt(2 * Nr)
+#    return H
+
+
 def generate_data_iid_test(B, K, N, snr_low, snr_high):
-    H_ = np.random.randn(B, N, K)
-    W_ = np.zeros([B, K, K])
+    H_ = generate_channel(B, N, K)
+    # W_=np.zeros([B,K,K])
     x_ = np.sign(np.random.rand(B, K)-0.5)
     y_ = np.zeros([B, N])
     w = np.random.randn(B, N)
@@ -74,9 +95,11 @@ def generate_data_iid_test(B, K, N, snr_low, snr_high):
     for i in range(B):
         SNR = np.random.uniform(low=snr_low, high=snr_high)
         H = H_[i, :, :]
-        tmp_snr = (H.T.dot(H)).trace()/K
-        H_[i, :, :] = H
+        tmp_snr = (H.T.dot(H)).trace()/K  # Calculate effective SNR ???
+        # H_[i,:,:]=H
+        # Adjust noise variance to channel matrix realization ???
         y_[i, :] = (H.dot(x_[i, :])+w[i, :]*np.sqrt(tmp_snr)/np.sqrt(SNR))
+        # y_[i,:]=(H.dot(x_[i,:])+w[i,:]/np.sqrt(SNR))
         Hy_[i, :] = H.T.dot(y_[i, :])
         HH_[i, :, :] = H.T.dot(H_[i, :, :])
         SNR_[i] = SNR
@@ -84,8 +107,8 @@ def generate_data_iid_test(B, K, N, snr_low, snr_high):
 
 
 def generate_data_train(B, K, N, snr_low, snr_high):
-    H_ = np.random.randn(B, N, K)
-    W_ = np.zeros([B, K, K])
+    H_ = generate_channel(B, N, K)
+    # W_=np.zeros([B,K,K])
     x_ = np.sign(np.random.rand(B, K)-0.5)
     y_ = np.zeros([B, N])
     w = np.random.randn(B, N)
@@ -96,8 +119,9 @@ def generate_data_train(B, K, N, snr_low, snr_high):
         SNR = np.random.uniform(low=snr_low, high=snr_high)
         H = H_[i, :, :]
         tmp_snr = (H.T.dot(H)).trace()/K
-        H_[i, :, :] = H
+        # H_[i,:,:]=H
         y_[i, :] = (H.dot(x_[i, :])+w[i, :]*np.sqrt(tmp_snr)/np.sqrt(SNR))
+        # y_[i,:]=(H.dot(x_[i,:])+w[i,:]/np.sqrt(SNR))
         Hy_[i, :] = H.T.dot(y_[i, :])
         HH_[i, :, :] = H.T.dot(H_[i, :, :])
         SNR_[i] = SNR
@@ -163,11 +187,10 @@ for i in range(1, L):
     V.append(affine_layer(ZZ, hl_size, v_size, 'aff'+str(i)))
     V[i] = (1-res_alpha)*V[i]+res_alpha*V[i-1]
     if LOG_LOSS == 1:
-        LOSS.append(np.log(i)*tf.reduce_mean(tf.reduce_mean(tf.square(X -
-                    S[-1]), 1)/tf.reduce_mean(tf.square(X - X_LS), 1)))
+        LOSS.append(
+            np.log(i)*tf.reduce_mean(tf.reduce_mean(tf.square(X - S[-1]), 1)))
     else:
-        LOSS.append(tf.reduce_mean(tf.reduce_mean(
-            tf.square(X - S[-1]), 1)/tf.reduce_mean(tf.square(X - X_LS), 1)))
+        LOSS.append(tf.reduce_mean(tf.reduce_mean(tf.square(X - S[-1]), 1)))
     BER.append(tf.reduce_mean(
         tf.cast(tf.not_equal(X, tf.sign(S[-1])), tf.float32)))
 
@@ -225,3 +248,16 @@ print('bers')
 print(bers)
 print('times')
 print(times)
+
+
+# Save simulation results into file
+EbN0 = snrdb_list  # - 10 * np.log10(2)
+pathfile = os.path.join('simulation_results',
+                        'BER_DETNET_{}_{}.npz'.format(K/2, N/2))
+if os.path.isfile(pathfile):
+    os.remove(pathfile)
+np.savez(pathfile, ebn0=EbN0, ber=bers)
+
+
+# Close session to free memory
+sess.close()
