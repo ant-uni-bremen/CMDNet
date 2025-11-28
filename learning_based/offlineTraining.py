@@ -158,7 +158,7 @@ if args.data:
 
 # Build the computational graph
 mmnet = MMNet_graph(params)
-nodes = mmnet.build() 
+nodes = mmnet.build()
 
 # Get access to the nodes on the graph
 sess = nodes['sess']

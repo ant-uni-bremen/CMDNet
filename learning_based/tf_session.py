@@ -25,37 +25,44 @@ class MMNet_graph():
             mimo = generator(self.params, batch_size)
 
             # Generate transmitt signals
-            constellation = mimo.constellation
-            indices = mimo.random_indices()
-            x = mimo.modulate(indices)
+            constellation = tf.identity(mimo.constellation, name = 'const')
+            indices = tf.identity(mimo.random_indices(), name = 'indices')
+            x = tf.identity(mimo.modulate(indices), name = 'input')
             
             # Send x through the channel
             if self.params['data']:
                 H = tf.placeholder(tf.float32, shape=(None, 2*self.params['N'], 2*self.params['K']), name='H')
                 y, noise_sigma, actual_snrdB = mimo.channel(x, snr_db_min, snr_db_max, H, self.params['data'], self.params['correlation'])
+                #x = tf.placeholder(tf.float32, shape=(None, 2*self.params['K']), name='x')
+                #y = tf.placeholder(tf.float32, shape=(None, 2*self.params['N']), name='y')
+                #noise_sigma = tf.placeholder(tf.float32, shape=(None, ), name='noise_sigma')
             else:
                 y, H, noise_sigma, actual_snrdB = mimo.channel(x, snr_db_min, snr_db_max, [], self.params['data'], self.params['correlation'])
 
             # Zero-forcing detection
             #x_mmse = mmse(y, H)
-            x_mmse = mmse(y, H, noise_sigma)
+            x_mmse = batch_matvec_mul(tf.transpose(H, perm=[0, 2, 1]), y) # #x_mmse = mmse(y, H, noise_sigma)
             x_mmse_idx = demodulate(x_mmse, constellation)
             x_mmse = tf.gather(constellation, x_mmse_idx)
             acc_mmse = accuracy(indices, demodulate(x_mmse, constellation))
             
             # MMNet detection
-            x_NN, helper = detector(self.params, constellation, x, y, H, noise_sigma, indices, batch_size).create_graph()
+            x_NN2, helper = detector(self.params, constellation, x, y, H, noise_sigma, indices, batch_size).create_graph()
+            x_NN = tf.identity(x_NN2, name = 'Out') # name output tensor
             loss = loss_fun(x_NN, x)
             #for i in range(10):
             #    print "y-Hx loss instead of xhat-x"
             #loss = loss_yhx(y, x_NN, H)
             for i in range(1):
                 print("REPORTING MAX ACCURACY") 
-            temp = []
-            for i in range(self.params['L']):
-                temp.append(accuracy(indices, demodulate(x_NN[i], constellation)))
-                #acc_NN = accuracy(indices, mimo.demodulate(x_NN[train_layer_no-1], modtypes))
-            acc_NN = tf.reduce_max(temp)
+            # ORIGINAL
+            # temp = []
+            # for i in range(self.params['L']):
+            #     temp.append(accuracy(indices, demodulate(x_NN[i], constellation)))
+            #     #acc_NN = accuracy(indices, mimo.demodulate(x_NN[train_layer_no-1], modtypes))
+            # acc_NN = tf.reduce_max(temp)
+            # MY MODIFICATION
+            acc_NN = accuracy(indices, demodulate(x_NN[-1], constellation)) # Evaluate output of last layer
 
             
             # Training operation
@@ -77,7 +84,19 @@ class MMNet_graph():
             #merged = tf.summary.merge_all()
             #print "merged"
             # Create session and initialize all variables
-            sess = tf.Session()
+            own = 0
+            if own == 1:
+                num_GPU = 0
+                num_cores = 8
+                config = tf.ConfigProto(intra_op_parallelism_threads=num_cores,\
+                inter_op_parallelism_threads=num_cores, allow_soft_placement=True,\
+                device_count = {'CPU' : 1, 'GPU' : num_GPU})
+                # sess = tf.InteractiveSession(config=config)
+                sess = tf.Session(config = config)
+            else:
+                # sess = tf.InteractiveSession()
+                sess = tf.Session()
+            #sess = tf.Session()
             
             #train_writer = tf.summary.FileWriter('./reports/'+self.params['save_name']+'/log/train', sess.graph)
             #test_writer = tf.summary.FileWriter('./reports/'+self.params['save_name']+'/log/test', sess.graph)

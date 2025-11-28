@@ -2,7 +2,8 @@ import tensorflow as tf
 import numpy as np
 
 def model_eval(test_data, snr_min, snr_max, mmse_accuracy, accuracy, batch_size, snr_db_min, snr_db_max, H, sess, iterations=150):
-    SNR_dBs = np.linspace(snr_min, snr_max, snr_max - snr_min + 1)
+    # my fix (!!!)
+    SNR_dBs = np.linspace(int(snr_min), int(snr_max), int(snr_max) - int(snr_min) + 1)
     accs_mmse = []#np.zeros(shape=SNR_dBs.shape)
     accs_NN = []#np.zeros(shape=SNR_dBs.shape)
     bs = 1000

@@ -7,7 +7,8 @@ class generator(object):
         modulation = params['modulation']
         self.batch_size = batch_size
         if params['data']:
-            self.Hdataset_powerdB = params['Hdataset_powerdB']
+            #self.Hdataset_powerdB = params['Hdataset_powerdB']
+            self.Hdataset_powerdB = np.inf # my mod (!!!)
         else:
             self.Hdataset_powerdB = np.inf
         self.NT = params['K']
@@ -32,7 +33,8 @@ class generator(object):
     def QAM_N_const(self, n=None):
         if n==None:
             n = self.mod_n
-        constellation = np.linspace(-np.sqrt(n)+1, np.sqrt(n)-1, np.sqrt(n))
+        # my fix (!!!)
+        constellation = np.linspace(-int(np.sqrt(n))+1, int(np.sqrt(n))-1, int(np.sqrt(n)))
         alpha = np.sqrt((constellation ** 2).mean())
         constellation /= (alpha * np.sqrt(2))
         constellation = tf.Variable(constellation, trainable=False, dtype=tf.float32)
@@ -104,6 +106,7 @@ class generator(object):
         # Channel Matrix
         if dataset_flag:
             H = H
+            self.Hdataset_powerdB = 0. # my mod (!!!)
         else:
             print("iid channels are generated")
             Hr = tf.random_normal(shape=[self.batch_size, self.NR, self.NT], stddev=1./np.sqrt(2.*self.NR), dtype=tf.float32)
