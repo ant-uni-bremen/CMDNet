@@ -31,31 +31,32 @@ snrdb_low_test & snrdb_high_test & num_snr - when testing, num_snr different SNR
 By Neev Samuel neev(dot)samuel(at)gmail(dot)com
 """
 
+
 sess = tf.InteractiveSession()
 
 
 # parameters
 K = 60  # 20 Nt * 2
 N = 60  # 30 Nr * 2
-snrdb_low = 7  # 10 - 3 # 7
-snrdb_high = 14  # 30 - 3 # 14
+snrdb_low = 7  # 7
+snrdb_high = 14  # 14 | 35
 snr_low = 10.0 ** (snrdb_low/10.0)
 snr_high = 10.0 ** (snrdb_high/10.0)
-L = K  # 90 (Default) #3 * K (VCDN) / K (ShVCDN) (Paper)
+L = 3 * K  # 90 (Default) #3 * K (VCDN) / K (ShVCDN) (Paper)
 v_size = 2 * K
 hl_size = 8 * K
 startingLearningRate = 0.0001
 decay_factor = 0.97
 decay_step_size = 1000
-train_iter = 2000  # 20000
-train_batch_size = 500  # 5000
+train_iter = 20000  # 20000
+train_batch_size = 5000  # 5000
 test_iter = 200
 test_batch_size = 1000
 LOG_LOSS = 1
 res_alpha = 0.9
 num_snr = 18
-snrdb_low_test = 4.0 - 3
-snrdb_high_test = 21.0 - 3  # SNR
+snrdb_low_test = 4.0
+snrdb_high_test = 21.0  # SNR
 
 """Data generation for train and test phases
 In this example, both functions are the same.
@@ -154,17 +155,17 @@ def sign_layer(x, input_size, output_size, Layer_num):
 
 
 # tensorflow placeholders, the input given to the model in order to train and test the network
-HY = tf.placeholder(tf.float32, shape=[None, K])
-X = tf.placeholder(tf.float32, shape=[None, K])
-HH = tf.placeholder(tf.float32, shape=[None, K, K])
-HHinv = tf.placeholder(tf.float32, shape=[None, K, K])
+HY = tf.placeholder(tf.float32, shape=[None, K], name="HYt")
+X = tf.placeholder(tf.float32, shape=[None, K], name="Xt")
+HH = tf.placeholder(tf.float32, shape=[None, K, K], name="HHt")
+# HHinv = tf.placeholder(tf.float32,shape=[None, K , K])
 
 batch_size = tf.shape(HY)[0]
 # X_LS = tf.matmul(tf.expand_dims(HY,1),tf.linalg.inv(HH))
-X_LS = tf.matmul(tf.expand_dims(HY, 1), HHinv)
-X_LS = tf.squeeze(X_LS, 1)
-loss_LS = tf.reduce_mean(tf.square(X - X_LS))
-ber_LS = tf.reduce_mean(tf.cast(tf.not_equal(X, tf.sign(X_LS)), tf.float32))
+# X_LS = tf.matmul(tf.expand_dims(HY,1),HHinv)
+# X_LS= tf.squeeze(X_LS,1)
+# loss_LS = tf.reduce_mean(tf.square(X - X_LS))
+# ber_LS = tf.reduce_mean(tf.cast(tf.not_equal(X,tf.sign(X_LS)), tf.float32))
 
 
 S = []
@@ -172,9 +173,9 @@ S.append(tf.zeros([batch_size, K]))
 V = []
 V.append(tf.zeros([batch_size, v_size]))
 LOSS = []
-LOSS.append(tf.zeros([]))
+LOSS.append(tf.zeros([], name="LOSSt"))
 BER = []
-BER.append(tf.zeros([]))
+BER.append(tf.zeros([], name="BERt"))
 
 # The architecture of DetNet
 for i in range(1, L):
@@ -187,36 +188,44 @@ for i in range(1, L):
     V.append(affine_layer(ZZ, hl_size, v_size, 'aff'+str(i)))
     V[i] = (1-res_alpha)*V[i]+res_alpha*V[i-1]
     if LOG_LOSS == 1:
-        LOSS.append(
-            np.log(i)*tf.reduce_mean(tf.reduce_mean(tf.square(X - S[-1]), 1)))
+        LOSS.append(tf.reduce_mean(
+            np.log(i) * tf.reduce_mean(tf.square(X - S[-1]), 1), name="LOSSt"))
     else:
         LOSS.append(tf.reduce_mean(tf.reduce_mean(tf.square(X - S[-1]), 1)))
-    BER.append(tf.reduce_mean(
-        tf.cast(tf.not_equal(X, tf.sign(S[-1])), tf.float32)))
+    BER.append(tf.reduce_mean(tf.cast(tf.not_equal(
+        X, tf.sign(S[-1])), tf.float32), name="BERt"))
 
-TOTAL_LOSS = tf.add_n(LOSS)
+TOTAL_LOSS = tf.add_n(LOSS, name="TOTAL_LOSSt")
 
 
 global_step = tf.Variable(0, trainable=False)
 learning_rate = tf.train.exponential_decay(
     startingLearningRate, global_step, decay_step_size, decay_factor, staircase=True)
 train_step = tf.train.AdamOptimizer(learning_rate).minimize(TOTAL_LOSS)
+tf.add_to_collection("train_step", train_step)
 init_op = tf.initialize_all_variables()
 
 sess.run(init_op)
 # Training DetNet
+# Save graph while Training
+pathfile = 'tf_graphs/detnet_{}_{}_{}snr{}_{}/'.format(
+    K/2, N/2, L, snrdb_low, snrdb_high)
+saver = tf.train.Saver()
 for i in range(train_iter):  # num of train iter
     batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_train(
         train_batch_size, K, N, snr_low, snr_high)
-    train_step.run(feed_dict={HY: batch_HY, HH: batch_HH,
-                   HHinv: np.linalg.inv(batch_HH), X: batch_X})
+    train_step.run(feed_dict={HY: batch_HY, HH: batch_HH, X: batch_X})
+    if i % 1000 == 0:
+        saver.save(sess, pathfile +
+                   'detnet_{}_{}_{}'.format(K/2, N/2, L), global_step=i)
     if i % 100 == 0:
         batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_iid_test(
             train_batch_size, K, N, snr_low, snr_high)
-        results = sess.run([loss_LS, LOSS[L-1], ber_LS, BER[L-1]],
-                           {HY: batch_HY, HH: batch_HH, HHinv: np.linalg.inv(batch_HH), X: batch_X})
+        results = sess.run([LOSS[-1], BER[-1]],
+                           {HY: batch_HY, HH: batch_HH, X: batch_X})
         print_string = [i]+results
         print ' '.join('%s' % x for x in print_string)
+saver.save(sess, pathfile+'detnet_{}_{}_{}'.format(K/2, N/2, L), global_step=i+1)
 
 
 # Testing the trained model
@@ -235,8 +244,8 @@ for j in range(num_snr):
         batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_iid_test(
             test_batch_size, K, N, snr_list[j], snr_list[j])
         tic = tm.time()
-        tmp_bers[:, jj] = np.array(sess.run(
-            BER[L-1], {HY: batch_HY, HH: batch_HH, HHinv: np.linalg.inv(batch_HH), X: batch_X}))
+        tmp_bers[:, jj] = np.array(
+            sess.run(BER[-1], {HY: batch_HY, HH: batch_HH, X: batch_X}))
         toc = tm.time()
         tmp_times[0][jj] = toc - tic
     bers[0][j] = np.mean(tmp_bers, 1)
@@ -251,13 +260,13 @@ print(times)
 
 
 # Save simulation results into file
-EbN0 = snrdb_list  # - 10 * np.log10(2)
-pathfile = os.path.join('simulation_results',
-                        'BER_DETNET_{}_{}.npz'.format(K/2, N/2))
+EbN0 = snrdb_list - 10 * np.log10(2)
+pathfile = os.path.join('simulation_results', 'BER_DETNET_{}_{}_{}snr{}_{}.npz'.format(
+    K/2, N/2, L, snrdb_low, snrdb_high))
 if os.path.isfile(pathfile):
     os.remove(pathfile)
 np.savez(pathfile, ebn0=EbN0, ber=bers)
 
 
-# Close session to free memory
-sess.close()
+# Close session to free memory -> not necessary...
+# sess.close()
