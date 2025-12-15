@@ -24,12 +24,12 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import SGD, Adam, Nadam
 
 # Own packages
-import my_modules.mycom as com
-import my_modules.myequ as equ
-import my_modules.myfunc as mf
-import my_modules.mymathops as mop
-import my_modules.mymimoch as mch
-import my_modules.mytraining as mt
+import my_communications as com
+import my_equalizer as equ
+import my_functions as mf
+import my_math_operations as mop
+import my_mimo_channel as mch
+import my_training as mt
 
 # Include parent folder
 sys.path.append('..')  # Include parent folder, where own packages lie
