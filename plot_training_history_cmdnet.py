@@ -20,8 +20,8 @@ import scipy.io as sio
 import numpy as np
 
 # Own packages
-import my_functions as mf
-import my_training as mt
+import utilities.my_functions as mf
+import utilities.my_training as mt
 
 # Settings
 fn_ext = ''

@@ -29,12 +29,12 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import SGD, Adam, Nadam
 
 # Own packages
-import my_communications as com
-import my_equalizer as equ
-import my_functions as mf
-import my_math_operations as mop
-import my_mimo_channel as mch
-import my_training as mt
+import utilities.my_communications as com
+import utilities.my_equalizer as equ
+import utilities.my_functions as mf
+import utilities.my_math_operations as mop
+import utilities.my_mimo_channel as mch
+import utilities.my_training as mt
 
 
 # Functions exclusive to this file

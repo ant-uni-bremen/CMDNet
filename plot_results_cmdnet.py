@@ -21,9 +21,9 @@ import tikzplotlib as tplt
 import os
 
 # Own packages
-import my_functions as mf
-import my_communications as com
-import my_math_operations as mop
+import utilities.my_functions as mf
+import utilities.my_communications as com
+import utilities.my_math_operations as mop
 
 # Settings
 mode = 0            # 0: default, 1:codes

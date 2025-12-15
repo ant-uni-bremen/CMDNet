@@ -22,7 +22,7 @@ The original code was downloaded, modified and resimulated for comparison to CMD
 
 This code was written for `TensorFlow 1.15` and the dependencies can be found in the Conda environment `ml.yml`.
 
-Run the script as `python3 MIMO_detection.py`, to reproduce the results of the articles. To do so, set the parameters in the file `sim_settings.yaml` to the values in the articles.
+Run the script as `python3 cmdnet_mimo_detection.py`, to reproduce the results of the articles. To do so, set the parameters in the file `sim_settings.yaml` to the values in the articles.
 
 There are four template setting files:
 1. Default training

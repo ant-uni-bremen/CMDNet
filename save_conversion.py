@@ -6,9 +6,9 @@ Created on Wed May 13 14:31:11 2020
 @author: beck
 """
 # Own packages
-import my_functions as mf
-import my_communications as com
-import my_training as mt
+import utilities.my_functions as mf
+import utilities.my_communications as com
+import utilities.my_training as mt
 # Include parent folder
 import sys
 sys.path.append('..')
