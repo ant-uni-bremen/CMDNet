@@ -11,26 +11,26 @@ import scipy as sp
 import scipy.integrate as integrate
 from tensorflow.keras.utils import to_categorical as konehot
 
-import mymathops as mop
-import mycom as com
+import my_math_operations as mop
+import my_communications as com
 
 
-## Channel Simulation -------------------------------------------------------
+# Channel Simulation -------------------------------------------------------
 
 
-def mimo_channel(Nb, Nr, Nt, compl = 0):
+def mimo_channel(Nb, Nr, Nt, compl=0):
     '''Generate [Nb] MIMO channel matrices H with [Nr]x[Nt] Gaussian/Rayleigh Fading taps
     compl: Complex (Rayleigh) or real-valued (Gaussian)
     '''
     if compl == 1:
-        H = (np.random.normal(0, 1, (Nb, Nr, Nt)) + 1j * np.random.normal(0, 1, (Nb, Nr, Nt))) / np.sqrt(2 * Nr)
+        H = (np.random.normal(0, 1, (Nb, Nr, Nt)) + 1j *
+             np.random.normal(0, 1, (Nb, Nr, Nt))) / np.sqrt(2 * Nr)
     else:
         H = np.random.normal(0, 1, (Nb, Nr, Nt)) / np.sqrt(Nr)
     return H
 
 
-
-def mimo_channel_corr(Nb, Nr, Nt, compl = 0, rho = 0, mode = 0):
+def mimo_channel_corr(Nb, Nr, Nt, compl=0, rho=0, mode=0):
     '''Generate [Nb] correlated MIMO channel matrices H with [Nr]x[Nt] Rayleigh Fading taps
     - According to Dirk's dissertation for a Uniform Linear Array
     compl: Complex or real-valued
@@ -38,7 +38,7 @@ def mimo_channel_corr(Nb, Nr, Nt, compl = 0, rho = 0, mode = 0):
     mode: Correlation only at receiver (0, default) or both transmitter and receiver (1)
     '''
     # Channel matrix w/o correlations
-    H_w = mimo_channel(Nb, Nr, Nt, compl) # * np.sqrt(Nr)
+    H_w = mimo_channel(Nb, Nr, Nt, compl)  # * np.sqrt(Nr)
     if rho == 0:
         H = H_w
     else:
@@ -60,10 +60,11 @@ def mimo_channel_corr(Nb, Nr, Nt, compl = 0, rho = 0, mode = 0):
             Phi_R = sp.linalg.toeplitz(phi_row, phi_row)
             Phi_R12 = sp.linalg.fractional_matrix_power(Phi_R, 0.5)
             # Compute correlated channel matrix
-            H = mop.batch_dot(mop.batch_dot(Phi_R12[np.newaxis, :, :], H_w), Phi_T12[np.newaxis, :, :])
-    
-    ## Debugging code
-    ## Test for correctness of implementation
+            H = mop.batch_dot(mop.batch_dot(
+                Phi_R12[np.newaxis, :, :], H_w), Phi_T12[np.newaxis, :, :])
+
+    # Debugging code
+    # Test for correctness of implementation
     # Phi_H = np.kron(Phi_T, Phi_R)
     # H_vec = np.transpose(H, (0, 2, 1)).reshape((H.shape[0], -1))
     # Phi_H2 = np.mean(np.einsum('ij,ik->ijk', H_vec, np.conj(H_vec)), axis = 0)
@@ -71,7 +72,7 @@ def mimo_channel_corr(Nb, Nr, Nt, compl = 0, rho = 0, mode = 0):
     # Phi_T2 = np.mean(mf.batch_dot(np.conj(np.transpose(H, (0, 2, 1))), H), axis = 0)
     # Phi_R2 = np.mean(mf.batch_dot(H, np.conj(np.transpose(H, (0, 2, 1)))), axis = 0)
 
-    ## Compare with alternative exact computation -> same
+    # Compare with alternative exact computation -> same
     # Phi_H = np.kron(Phi_T, Phi_R)
     # Phi_H12 = sp.linalg.fractional_matrix_power(Phi_H, 0.5)
     # H_w_vec = np.transpose(H_w, (0, 2, 1)).reshape((H_w.shape[0], -1))
@@ -80,7 +81,7 @@ def mimo_channel_corr(Nb, Nr, Nt, compl = 0, rho = 0, mode = 0):
     return H
 
 
-def mimo_channel_onering(Nb, Nr, Nt, Phi_R12, compl = 0):
+def mimo_channel_onering(Nb, Nr, Nt, Phi_R12, compl=0):
     '''Generate [Nb] correlated MIMO channel matrices H with [Nr]x[Nt] Rayleigh Fading taps
     - According to one ring model of Massive MIMO Book!
     Phi_R12: Square root of [Nr]x[Nr] channel covariance matrix at receiver side antenna array
@@ -88,9 +89,10 @@ def mimo_channel_onering(Nb, Nr, Nt, Phi_R12, compl = 0):
     '''
     # Channel matrix w/o correlations
     H_w = mimo_channel(Nb, Nr, Nt, compl)
-    H = np.zeros(H_w.shape, dtype = 'complex128')
+    H = np.zeros(H_w.shape, dtype='complex128')
     # Sampling without replacement
-    theta_ind = np.array([np.random.choice(range(0, Phi_R12.shape[0]), (Nt), replace = 0) for _ in range(Nb)])
+    theta_ind = np.array([np.random.choice(
+        range(0, Phi_R12.shape[0]), (Nt), replace=0) for _ in range(Nb)])
     H = np.einsum('nmij,njm->nim', Phi_R12[theta_ind, :, :], H_w)
     # Iterative implementation - slower
     # theta_ind = np.random.randint(0, Phi_R12.shape[0], (Nb, Nt))
@@ -100,8 +102,7 @@ def mimo_channel_onering(Nb, Nr, Nt, Phi_R12, compl = 0):
     return H
 
 
-
-def mimo_OneRingModel(N, angularSpread, cell_sector = 360, compl = 1, D = 1/2):
+def mimo_OneRingModel(N, angularSpread, cell_sector=360, compl=1, D=1/2):
     '''This is an implementation of the channel covariance matrix with the
     one-ring model converted from Matlab to Python. The implementation is
     based on Eq. (57) in the paper:
@@ -146,16 +147,16 @@ def mimo_OneRingModel(N, angularSpread, cell_sector = 360, compl = 1, D = 1/2):
     #     real_integral = integrate.quad(real_func, a, b, **kwargs)
     #     imag_integral = integrate.quad(imag_func, a, b, **kwargs)
     #     return (real_integral[0] + 1j*imag_integral[0], real_integral[1:], imag_integral[1:])
-    ## Approximated angular spread
+    # Approximated angular spread
     Delta = angularSpread * np.pi / 180
-    ## Half a wavelength distance
+    # Half a wavelength distance
     # D = 1 / 2
-    ## Angle of arrival (30 degrees)
+    # Angle of arrival (30 degrees)
     # theta = theta_grad * np.pi / 180 # np.pi / 6
-    ## The covariance matrix has the Toeplitz structure, so we only need to
-    ## compute the first row.
-    firstRow = np.zeros((cell_sector, N), dtype = 'complex128')
-    R12 = np.zeros((cell_sector, N, N), dtype = 'complex128')
+    # The covariance matrix has the Toeplitz structure, so we only need to
+    # compute the first row.
+    firstRow = np.zeros((cell_sector, N), dtype='complex128')
+    R12 = np.zeros((cell_sector, N, N), dtype='complex128')
 
     # Go through all columns in the first row
     for theta_grad in range(-int(cell_sector / 2), int(cell_sector / 2)):
@@ -164,21 +165,24 @@ def mimo_OneRingModel(N, angularSpread, cell_sector = 360, compl = 1, D = 1/2):
             # Distance from the first antenna
             distance = col
             # Compute the integral as in [42]
-            re = integrate.quad(lambda alpha: np.real(F(alpha, D, distance, theta, Delta)), -Delta, Delta)[0]
+            re = integrate.quad(lambda alpha: np.real(
+                F(alpha, D, distance, theta, Delta)), -Delta, Delta)[0]
             if compl == 0:
                 # TODO: Exact computation of Phi_R12 for real-valued channels?
                 firstRow[theta_grad, col] = np.real(re)
             else:
-                im = integrate.quad(lambda alpha: np.imag(F(alpha, D, distance, theta, Delta)), -Delta, Delta)[0]
+                im = integrate.quad(lambda alpha: np.imag(
+                    F(alpha, D, distance, theta, Delta)), -Delta, Delta)[0]
                 firstRow[theta_grad, col] = re + 1j * im
-        R12[theta_grad, :, :] = sp.linalg.fractional_matrix_power(sp.linalg.toeplitz(firstRow[theta_grad, :]), 0.5)
+        R12[theta_grad, :, :] = sp.linalg.fractional_matrix_power(
+            sp.linalg.toeplitz(firstRow[theta_grad, :]), 0.5)
     # Compute the covarince matrix by utilizing the Toeplitz structure
     # R = sp.linalg.toeplitz(firstRow)
     # Normalization with tr(R)=Nr already included
     return R12
 
 
-def generate_channel(Nb, Nr, Nt, compl = 0, rho = 0):
+def generate_channel(Nb, Nr, Nt, compl=0, rho=0):
     '''Generates complex or real-valued [Nr]x[Nt] channel according to correlation model (of a Uniform Linear Array)
     Nb: Number of channel realizations
     Nr: Effective number of receive antennas
@@ -194,7 +198,7 @@ def generate_channel(Nb, Nr, Nt, compl = 0, rho = 0):
     return Hr
 
 
-def generate_channel_onering(Nb, Nr, Nt, Phi_R12, compl = 0):
+def generate_channel_onering(Nb, Nr, Nt, Phi_R12, compl=0):
     '''Generates complex or real-valued [Nr]x[Nt] channel according to one ring correlation model
     Nb: Number of channel realizations
     Nr: Number of receive antennas
@@ -217,7 +221,8 @@ class dataset_gen():
     # Class Attribute
     name = 'MIMO dataset generator'
     # Initializer / Instance Attributes
-    def __init__(self, sim_par, soft = 0, code = 0, G = 0, arch = 0, online = 0):
+
+    def __init__(self, sim_par, soft=0, code=0, G=0, arch=0, online=0):
         '''Input -----------------------------------------
         sim_par: Object from class simulation_parameters
         soft: Decide for classes or symbols as output of data set
@@ -240,9 +245,11 @@ class dataset_gen():
         # One Ring
         if sim_par.rho[0] > 1:
             if self.sim_par.mod.compl == 1:
-                self.Phi_R12 = mimo_OneRingModel(int(sim_par.Nr / 2), sim_par.rho[0], cell_sector = sim_par.rho[1], compl = self.sim_par.mod.compl, D = sim_par.rho[2])
+                self.Phi_R12 = mimo_OneRingModel(int(
+                    sim_par.Nr / 2), sim_par.rho[0], cell_sector=sim_par.rho[1], compl=self.sim_par.mod.compl, D=sim_par.rho[2])
             else:
-                self.Phi_R12 = mimo_OneRingModel(sim_par.Nr, sim_par.rho[0], cell_sector = sim_par.rho[1], compl = self.sim_par.mod.compl, D = sim_par.rho[2])
+                self.Phi_R12 = mimo_OneRingModel(
+                    sim_par.Nr, sim_par.rho[0], cell_sector=sim_par.rho[1], compl=self.sim_par.mod.compl, D=sim_par.rho[2])
         # Outputs
         self.y = 0
         self.Hr = 0
@@ -254,16 +261,18 @@ class dataset_gen():
         self.u = 0
         self.data_val = []      # Important for online training
         self.data_opt = None    # Optimized for fixed input data
-        self.N_bval = 0 
+        self.N_bval = 0
     # Instance methods
-    def __call__(self, Nb = None):
+
+    def __call__(self, Nb=None):
         if self.code == 1:
-            return self.gen_coded_mimodata(Nb = Nb)
+            return self.gen_coded_mimodata(Nb=Nb)
         elif self.online >= 1:
-            self.gen_online_mimodata(Nb = Nb)
+            self.gen_online_mimodata(Nb=Nb)
         else:
-            return self.gen_mimodata(Nb = Nb)
-    def gen_mimodata(self, Nb = None):
+            return self.gen_mimodata(Nb=Nb)
+
+    def gen_mimodata(self, Nb=None):
         '''Generates data according to MIMO channel model for arbitrary symbol alphabet m
         Output ----------------------------------------
         data = [y, Hr, sigma, z, x]
@@ -280,7 +289,7 @@ class dataset_gen():
             Nb = self.sim_par.N_batch
         Nr = self.sim_par.Nr
         Nt = self.sim_par.Nt
-        #alpha = sim_par.mod.alpha      # Not used
+        # alpha = sim_par.mod.alpha      # Not used
         snr_min = self.sim_par.SNR_range[0]
         snr_max = self.sim_par.SNR_range[1]
         m = self.sim_par.mod.m
@@ -292,18 +301,20 @@ class dataset_gen():
         # Generate class labels -----------------------
         self.cl = np.reshape(np.random.randint(0, M, Nb * Nt), (Nb, -1))
         # Convert labels to categorical one-hot encoding
-        self.z = konehot(self.cl, num_classes = M)
+        self.z = konehot(self.cl, num_classes=M)
         self.x = m[self.cl]             # x = np.dot(z, m)
-    
+
         # Generate Nb2 = Nb channel matrices and SNRs for offline training / Nb2 = 1 for online training
         if rho > 1:
             self.Hr = generate_channel_onering(Nb, Nr, Nt, self.Phi_R12, compl)
         else:
             self.Hr = generate_channel(Nb, Nr, Nt, compl, rho)
-        self.sigma = mop.csigma(np.random.uniform(snr_min, snr_max, Nb))    # SNR = 7 - 35 dB
-        self.y = com.awgn(mop.batch_dot(self.Hr, self.x), np.repeat(self.sigma[:, np.newaxis], Nr, axis=-1))
+        self.sigma = mop.csigma(np.random.uniform(
+            snr_min, snr_max, Nb))    # SNR = 7 - 35 dB
+        self.y = com.awgn(mop.batch_dot(self.Hr, self.x), np.repeat(
+            self.sigma[:, np.newaxis], Nr, axis=-1))
 
-        ## Implementation with QR decomposed system model
+        # Implementation with QR decomposed system model
         # qr = 0
         # if qr == 1:
         #     ## Numpy implementation
@@ -330,7 +341,8 @@ class dataset_gen():
             self.data = [self.y, self.Hr, self.sigma, self.z, self.x]
 
         return self.data
-    def gen_online_mimodata(self, Nb = None):
+
+    def gen_online_mimodata(self, Nb=None):
         '''Generates data according to MIMO channel model ONLINE for arbitrary symbol alphabet m and
         realization of channel matrix H and noise std dev sigma
         Output ----------------------------------------
@@ -364,22 +376,26 @@ class dataset_gen():
         # Generate class labels -----------------------
         self.cl = np.reshape(np.random.randint(0, M, Nb * Nt), (Nb, -1))
         # Convert labels to categorical one-hot encoding
-        self.z = konehot(self.cl, num_classes = M)
+        self.z = konehot(self.cl, num_classes=M)
         self.x = m[self.cl]             # x = np.dot(z, m)
-    
+
         # Generate Nb2 = Nb channel matrices and SNRs for offline training / Nb2 = 1 for online training
         if self.online_it == 0:
             if rho > 1:
-                self.Hr = generate_channel_onering(Nb2, Nr, Nt, self.Phi_R12, compl)
+                self.Hr = generate_channel_onering(
+                    Nb2, Nr, Nt, self.Phi_R12, compl)
             else:
                 self.Hr = generate_channel(Nb2, Nr, Nt, compl, rho)
-            self.sigma = mop.csigma(np.random.uniform(snr_min, snr_max, Nb2))   # SNR = 7 - 35 dB
+            self.sigma = mop.csigma(np.random.uniform(
+                snr_min, snr_max, Nb2))   # SNR = 7 - 35 dB
         if self.online >= 1:
             # Note: sigma needs to have the dimension as x to produce the same amount of noise realizations n
             # -> Adaptation of code for just one sigma necessary here
-            self.y = com.awgn(mop.batch_dot(self.Hr, self.x), self.sigma * np.ones((Nb, Nr)))
+            self.y = com.awgn(mop.batch_dot(self.Hr, self.x),
+                              self.sigma * np.ones((Nb, Nr)))
         else:
-            self.y = com.awgn(mop.batch_dot(self.Hr, self.x), np.repeat(self.sigma[:, np.newaxis], Nr, axis = -1))
+            self.y = com.awgn(mop.batch_dot(self.Hr, self.x), np.repeat(
+                self.sigma[:, np.newaxis], Nr, axis=-1))
 
         if self.soft == 1:
             self.data = [self.y, self.Hr, self.sigma, self.x]
@@ -392,14 +408,17 @@ class dataset_gen():
             if self.online_it == 0:
                 # Generate validation set for current channel matrix and SNR
                 # Generate class labels -----------------------
-                cl = np.reshape(np.random.randint(0, M, self.N_bval * Nt), (self.N_bval, -1))
+                cl = np.reshape(np.random.randint(
+                    0, M, self.N_bval * Nt), (self.N_bval, -1))
                 # Convert labels to categorical one-hot encoding
-                z = konehot(cl, num_classes = M)
+                z = konehot(cl, num_classes=M)
                 x = m[cl]
                 if self.online >= 1:
-                    y = com.awgn(mop.batch_dot(self.Hr, x), self.sigma * np.ones((self.N_bval, Nr)))
+                    y = com.awgn(mop.batch_dot(self.Hr, x),
+                                 self.sigma * np.ones((self.N_bval, Nr)))
                 else:
-                    y = com.awgn(mop.batch_dot(self.Hr, x), np.repeat(self.sigma[:, np.newaxis], Nr, axis = -1))
+                    y = com.awgn(mop.batch_dot(self.Hr, x), np.repeat(
+                        self.sigma[:, np.newaxis], Nr, axis=-1))
                 if self.soft == 1:
                     self.data_val = [y, self.Hr, self.sigma, x]
                 elif self.soft == 0:
@@ -414,7 +433,8 @@ class dataset_gen():
             if self.online_it >= self.online:
                 self.online_it = 0
         return self.data
-    def gen_onlineval_mimodata(self, Nb = None):
+
+    def gen_onlineval_mimodata(self, Nb=None):
         '''Generates data according to MIMO channel model ONLINE for arbitrary symbol alphabet m and
         GIVEN channel matrix H and noise std dev sigma - only for validation 
         Output ----------------------------------------
@@ -440,9 +460,10 @@ class dataset_gen():
         # Generate class labels -----------------------
         self.cl = np.reshape(np.random.randint(0, M, Nb * Nt), (Nb, -1))
         # Convert labels to categorical one-hot encoding
-        self.z = konehot(self.cl, num_classes = M)
+        self.z = konehot(self.cl, num_classes=M)
         self.x = m[self.cl]             # x = np.dot(z, m)
-        self.y = com.awgn(mop.batch_dot(self.Hr, self.x), self.sigma * np.ones((Nb, Nr)))
+        self.y = com.awgn(mop.batch_dot(self.Hr, self.x),
+                          self.sigma * np.ones((Nb, Nr)))
         if self.soft == 1:
             self.data = [self.y, self.Hr, self.sigma, self.x]
         elif self.soft == 0:
@@ -450,7 +471,8 @@ class dataset_gen():
         else:
             self.data = [self.y, self.Hr, self.sigma, self.z, self.x]
         return self.data
-    def gen_coded_mimodata(self, Nb = None):
+
+    def gen_coded_mimodata(self, Nb=None):
         '''Generates coded data according to MIMO channel model for arbitrary symbol alphabet m
         Output ----------------------------------------
         data = [y, Hr, sigma, z, x]
@@ -478,23 +500,22 @@ class dataset_gen():
         arch = self.arch
         G = self.G
 
-
         # 1. Generate data bits -----------------------
         Nbc = sym2code_batchsize(Nb, Nt, M, G.shape[-1], arch)
-        u = np.random.randint(2, size = (Nbc, G.shape[0]))
+        u = np.random.randint(2, size=(Nbc, G.shape[0]))
         c = com.encoder(u, G)
         self.intleav.shuffle(Nbc, G.shape[-1])
         c_perm = self.intleav.interleave(c)
         # Interface to Equalizer
         c2 = com.mimo_coding(c_perm, Nt, M, arch)
-        
+
         # 2. Generate class labels -----------------------
         # cl = np.reshape(np.random.randint(0, M, Nb * Nt), (Nb, -1))
-        cl = mop.bin2int(c2, axis = -1)
+        cl = mop.bin2int(c2, axis=-1)
         # Convert labels to categorical one-hot encoding
-        z = konehot(cl, num_classes = M).astype('int32')
+        z = konehot(cl, num_classes=M).astype('int32')
         if len(z.shape) == 3:
-            z = np.expand_dims(z, axis = -2)
+            z = np.expand_dims(z, axis=-2)
         # Generate symbols
         x = m[cl]                       # x = np.dot(z, m)
         Nb2 = x.shape[0]
@@ -503,16 +524,21 @@ class dataset_gen():
             Hr = generate_channel_onering(Nb2, Nr, Nt, self.Phi_R12, compl)
         else:
             Hr = generate_channel(Nb2, Nr, Nt, compl, rho)
-        sigma = mop.csigma(np.random.uniform(snr_min, snr_max, Nb2))    # SNR = 7 - 35 dB
-        y = com.awgn(mop.batch_dot(Hr, x), sigma[:, np.newaxis].repeat(Nr, -1)[:, :, np.newaxis].repeat(x.shape[2], -1))
+        sigma = mop.csigma(np.random.uniform(
+            snr_min, snr_max, Nb2))    # SNR = 7 - 35 dB
+        y = com.awgn(mop.batch_dot(Hr, x), sigma[:, np.newaxis].repeat(
+            Nr, -1)[:, :, np.newaxis].repeat(x.shape[2], -1))
 
         # Match dimensions of Equalizer
         cl2 = np.transpose(cl, (0, 2, 1)).reshape((-1, cl.shape[1]))
-        z2 = np.transpose(z, (0, 2, 1, 3)).reshape((-1, z.shape[1], z.shape[-1]))
+        z2 = np.transpose(z, (0, 2, 1, 3)).reshape(
+            (-1, z.shape[1], z.shape[-1]))
         x2 = np.transpose(x, (0, 2, 1)).reshape((-1, x.shape[1]))
-        sigma2 = sigma[:, np.newaxis].repeat(x.shape[2], -1).reshape(cl2.shape[0])
+        sigma2 = sigma[:, np.newaxis].repeat(
+            x.shape[2], -1).reshape(cl2.shape[0])
         y2 = np.transpose(y, (0, 2, 1)).reshape((-1, y.shape[1]))
-        Hr2 = np.expand_dims(Hr, axis = 1).repeat(x.shape[-1], 1).reshape(-1, Nr, Nt)
+        Hr2 = np.expand_dims(Hr, axis=1).repeat(
+            x.shape[-1], 1).reshape(-1, Nr, Nt)
 
         self.cl = cl2
         self.z = z2
@@ -544,7 +570,8 @@ def sym2code_batchsize(Nb, Nt, M, n, arch):
     '''
     if arch == 'horiz':
         # Nt * n is minimum size
-        Nb2 = int(np.ceil(Nb / (Nt * np.ceil(n / np.log2(M)))) * Nt * np.ceil(n / np.log2(M)))
+        Nb2 = int(np.ceil(Nb / (Nt * np.ceil(n / np.log2(M))))
+                  * Nt * np.ceil(n / np.log2(M)))
         Nbc = int(Nb2 * Nt * np.log2(M) / np.ceil(n / np.log2(M)))
     elif arch == 'vert':
         fit2x = Nt * np.log2(M) / n
@@ -557,4 +584,4 @@ def sym2code_batchsize(Nb, Nt, M, n, arch):
     return Nbc
 
 
-#EOF
+# EOF
