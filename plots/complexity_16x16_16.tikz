@@ -1,0 +1,38 @@
+% This file was created by tikzplotlib v0.9.3.
+\begin{tikzpicture}
+
+\definecolor{color0}{rgb}{0.75,0,0.75}
+\definecolor{color1}{rgb}{0.75,0.75,0}
+
+\begin{axis}[
+log basis y={10},
+tick align=outside,
+tick pos=left,
+x grid style={white!40!black},
+xmajorgrids,
+xmin=-0.99, xmax=11.99,
+xminorgrids,
+xtick style={color=black},
+y grid style={white!40!black},
+ylabel={# of Multiplication Ops},
+ymajorgrids,
+ymin=100, ymax=10000000000,
+yminorgrids,
+ymode=log,
+ytick style={color=black}
+]
+\draw[draw=none,fill=black] (axis cs:-0.4,0) rectangle (axis cs:0.4,17956864);
+\draw[draw=none,fill=black] (axis cs:0.6,0) rectangle (axis cs:1.4,2352.53423103393);
+\draw[draw=none,fill=black] (axis cs:1.6,0) rectangle (axis cs:2.4,445.721888407615);
+\draw[draw=none,fill=black] (axis cs:2.6,0) rectangle (axis cs:3.4,337.794025157861);
+\draw[draw=none,fill=black] (axis cs:3.6,0) rectangle (axis cs:4.4,256);
+\draw[draw=none,fill=black] (axis cs:4.6,0) rectangle (axis cs:5.4,5832);
+\draw[draw=none,fill=blue] (axis cs:5.6,0) rectangle (axis cs:6.4,8976);
+\draw[draw=none,fill=red] (axis cs:6.6,0) rectangle (axis cs:7.4,9281);
+\draw[draw=none,fill=color0] (axis cs:7.6,0) rectangle (axis cs:8.4,124672);
+\draw[draw=none,fill=color1] (axis cs:8.6,0) rectangle (axis cs:9.4,299792);
+\draw[draw=none,fill=green!50!black] (axis cs:9.6,0) rectangle (axis cs:10.4,603608.866617831);
+\draw[draw=none,fill=green!50!black] (axis cs:10.6,0) rectangle (axis cs:11.4,226353.324981687);
+\end{axis}
+
+\end{tikzpicture}

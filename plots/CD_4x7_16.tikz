@@ -1,0 +1,83 @@
+% This file was created by tikzplotlib v0.9.8.
+\begin{tikzpicture}
+
+\definecolor{color0}{rgb}{0.75,0.75,0}
+
+\begin{axis}[
+legend cell align={left},
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(0.03,0.03)},
+  anchor=south west,
+  draw=white!80!black
+},
+log basis y={10},
+tick align=outside,
+tick pos=left,
+x grid style={white!69.0196078431373!black},
+xmajorgrids,
+xmin=0.6, xmax=9.4,
+xtick style={color=black},
+y grid style={white!69.0196078431373!black},
+ymajorgrids,
+ymin=9.08077773243225e-06, ymax=0.566792036062426,
+ymode=log,
+ytick style={color=black}
+]
+\addplot [semithick, color0]
+table {%
+1 0.3431275
+2 0.33972
+3 0.340145
+4 0.3390425
+5 0.33758
+6 0.3344
+7 0.3339875
+8 0.332795
+9 0.331025
+};
+\addlegendentry{CD untrained}
+\addplot [semithick, red]
+table {%
+1 0.3073275
+2 0.257335
+3 0.21377
+4 0.183125
+5 0.1603375
+6 0.1421025
+7 0.12866
+8 0.1200775
+9 0.1128375
+};
+\addlegendentry{CD trained}
+\addplot [semithick, blue]
+table {%
+1 0.0584425
+2 0.0346625
+3 0.0171875
+4 0.00737750000000004
+5 0.00224000000000002
+6 0.000612500000000016
+7 7.25000000000309e-05
+8 1.49999999999872e-05
+9 0
+};
+\addlegendentry{BP}
+\addplot [semithick, green!50!black]
+table {%
+1 0.0562819519765415
+2 0.037506128358926
+3 0.0228784075610853
+4 0.0125008180407376
+5 0.00595386714777866
+6 0.00238829078093281
+7 0.000772674815378445
+8 0.000190907774075993
+9 3.36272284196175e-05
+};
+\addlegendentry{AWGN BPSK}
+\end{axis}
+
+\end{tikzpicture}

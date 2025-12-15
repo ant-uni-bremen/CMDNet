@@ -1,0 +1,112 @@
+% This file was created by tikzplotlib v0.9.3.
+\begin{tikzpicture}
+
+\begin{axis}[
+legend cell align={left},
+legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=white!80!black},
+tick align=outside,
+tick pos=left,
+x grid style={white!40!black},
+xlabel={iteration},
+xmajorgrids,
+xmin=-3.15, xmax=66.15,
+xminorgrids,
+xtick style={color=black},
+y grid style={white!40!black},
+ylabel={delta},
+ymajorgrids,
+ymin=0.95, ymax=1.05,
+yminorgrids,
+ytick style={color=black}
+]
+\addplot [semithick, black]
+table {%
+0 1
+1 1
+2 1
+3 1
+4 1
+5 1
+6 1
+7 1
+8 1
+9 1
+10 1
+11 1
+12 1
+13 1
+14 1
+15 1
+};
+\addlegendentry{CMD bin 16 tau0.075}
+\addplot [semithick, red]
+table {%
+0 1
+1 1
+2 1
+3 1
+4 1
+5 1
+6 1
+7 1
+8 1
+9 1
+10 1
+11 1
+12 1
+13 1
+14 1
+15 1
+16 1
+17 1
+18 1
+19 1
+20 1
+21 1
+22 1
+23 1
+24 1
+25 1
+26 1
+27 1
+28 1
+29 1
+30 1
+31 1
+32 1
+33 1
+34 1
+35 1
+36 1
+37 1
+38 1
+39 1
+40 1
+41 1
+42 1
+43 1
+44 1
+45 1
+46 1
+47 1
+48 1
+49 1
+50 1
+51 1
+52 1
+53 1
+54 1
+55 1
+56 1
+57 1
+58 1
+59 1
+60 1
+61 1
+62 1
+63 1
+};
+\addlegendentry{CMD bin 64 tau0.1}
+\end{axis}
+
+\end{tikzpicture}

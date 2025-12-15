@@ -1,0 +1,52 @@
+code_set:
+  arch: horiz
+  code: uncoded
+  dec: bp
+  it: 10
+  path: codes
+load_set:
+  fn_sim: RES_
+  fn_train: trainhist_
+  gpu: 1
+  prec: float64
+  sim: 0
+  sv_ext: npz
+  train: 0
+sim_set:
+  L: 64
+  Mod: QPSK
+  Nbatch: 10000
+  Nerr_min: 1000
+  Nr: 64
+  Nt: 64
+  algo: CMDNet
+  binopt: 1
+  ebn0_range:
+  - 8
+  - 8
+  fn_ext: _online1000_snr8_Ne100000
+  path: curves
+  rho:
+  - 0
+  - 120
+  - 0.5
+  sim_prec: 5.0e-07
+  snr_grid: 1
+train_set:
+  Nepoch: 100000
+  batch_size: 500
+  dnnwidth: 64
+  ebn0_range:
+  - 8
+  - 8
+  esteps: 0
+  it_checkp: 100
+  lr_dyn: 0
+  multiloss: 0
+  online: 1000
+  opt: adam
+  sel_bweights: 0
+  soft: 0
+  start_point: load
+  sv_checkp: 1
+  val_size: 10000
