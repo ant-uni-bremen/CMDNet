@@ -35,8 +35,8 @@ snr_high = 10.0 ** (snrdb_high/10.0)
 
 def generate_channel(B, N, K):
     if K % 2 == 0 and N % 2 == 0:
-        H_re = np.random.randn(B, N/2, K/2)
-        H_im = np.random.randn(B, N/2, K/2)
+        H_re = np.random.randn(B, int(N/2), int(K/2))
+        H_im = np.random.randn(B, int(N/2), int(K/2))
         # H_ = np.concatenate(((np.concatenate((H_re, -H_im), -1), np.concatenate((H_im, H_re), -1))), 1) / np.sqrt(N)
         H_ = np.concatenate(((np.concatenate(
             (H_re, -H_im), -1), np.concatenate((H_im, H_re), -1))), 1) / np.sqrt(2 * N / 2)
@@ -132,7 +132,7 @@ if do_train == 1:
             results = sess.run(
                 [LOSS, BER], {HY: batch_HY, HH: batch_HH, X: batch_X})
             print_string = [i]+results
-            print ' '.join('%s' % x for x in print_string)
+            print(' '.join(f'{x}' for x in print_string))
     saver.save(sess, pathfile+'detnet_{}_{}_{}'.format(K /
                2, N/2, L), global_step=i+1)
 

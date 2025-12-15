@@ -68,8 +68,8 @@ currently both test and train are over i.i.d gaussian channel.
 
 def generate_channel(B, N, K):
     if K % 2 == 0 and N % 2 == 0:
-        H_re = np.random.randn(B, N/2, K/2)
-        H_im = np.random.randn(B, N/2, K/2)
+        H_re = np.random.randn(B, int(N/2), int(K/2))
+        H_im = np.random.randn(B, int(N/2), int(K/2))
         # H_ = np.concatenate(((np.concatenate((H_re, -H_im), -1), np.concatenate((H_im, H_re), -1))), 1) / np.sqrt(N)
         H_ = np.concatenate(((np.concatenate(
             (H_re, -H_im), -1), np.concatenate((H_im, H_re), -1))), 1) / np.sqrt(2 * N / 2)
@@ -224,7 +224,7 @@ for i in range(train_iter):  # num of train iter
         results = sess.run([LOSS[-1], BER[-1]],
                            {HY: batch_HY, HH: batch_HH, X: batch_X})
         print_string = [i]+results
-        print ' '.join('%s' % x for x in print_string)
+        print(' '.join(f'{x}' for x in print_string))
 saver.save(sess, pathfile+'detnet_{}_{}_{}'.format(K/2, N/2, L), global_step=i+1)
 
 
