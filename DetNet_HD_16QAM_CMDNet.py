@@ -455,7 +455,7 @@ def generate_data_iid_test(B, K, N, snr_low, snr_high, WithNoise, compl=1, rho=0
     return y_, H_, Hy_, HH_, x_, SNR_, H_R, H_I, x_R, x_I, w_R, w_I, x_ind
 
 
-def generate_data_train(B, K, N, snr_low, snr_high, WithNoise, compl=1, rho=0):
+def generate_data_train(B, K, N, snr_low, snr_high, WithNoise, compl=1, rho=0, Phi_R12=0):
     x_R = np.random.randint(4, size=(B, K))
     x_R = x_R * 2
     x_R = x_R - 3
