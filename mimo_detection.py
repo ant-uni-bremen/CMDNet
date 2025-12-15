@@ -6,9 +6,14 @@ Created on Thu Mar 21 10:05:19 2019
 @author: beck
 """
 
+import sys                                  # NOQA
+# Include current folder, where start simulation script and packages are
+sys.path.append('.')                        # NOQA
+# Include parent folder, where own packages are
+sys.path.append('..')                       # NOQA
+
 # LOADED PACKAGES
 import os
-import sys
 import time
 
 # Python packages
@@ -31,15 +36,10 @@ import my_math_operations as mop
 import my_mimo_channel as mch
 import my_training as mt
 
-# Include parent folder
-sys.path.append('..')  # Include parent folder, where own packages lie
-# Include current folder, where start simulation script and packages lie
-sys.path.append('.')
-
 
 # Functions exclusive to this file
 
-class CMD_graph():
+class CMDGraph():
     '''CMDNet graph object
     Original implementation from:
     Beck, E.; Bockelmann, C.; Dekorsy, A. CMDNet: Learning a Probabilistic Relaxation of
@@ -356,7 +356,7 @@ def lr_schedule(lr):
     return lr_new
 
 
-def CMD_initpar(M, L, typ, k=0):
+def cmd_initpar(M, L, typ, k=0):
     '''Calculate a good heuristic starting point for CMD / loading starting point
     M: Number of classes / Modulation order
     L: Number of layers / iterations
@@ -411,7 +411,7 @@ def CMD_initpar(M, L, typ, k=0):
         # fn2 = mf.filename_module('trainhist_', 'curves', 'CMD', '_binary', sim_set) # default: _binary
         ##
         saveobj2 = mf.savemodule('npz')
-        train_hist2 = mt.training_history()
+        train_hist2 = mt.TrainingHistory()
         train_hist2.dict2obj(saveobj2.load(fn2.pathfile))
         [delta0, taui0] = train_hist2.params[-1]
     else:
@@ -429,7 +429,7 @@ def CMD_initpar(M, L, typ, k=0):
     return delta0, taui0
 
 
-class DetNet_graph():
+class DetNetGraph():
     '''DetNet graph object
     For loading a DetNet graph from original source code and evaluating it inside this script
     '''
@@ -529,7 +529,7 @@ class DetNet_graph():
         return self.inputs, self.outputs, self.graph
 
 
-class MMNet_graph():
+class MMNetGraph():
     '''MMNet graph object
     For loading a MMNet graph from original source code and evaluating it inside this script
     '''
@@ -614,7 +614,7 @@ class MMNet_graph():
         return self.inputs, self.outputs
 
 
-def MIMODNN(sim_par, Nh, NL=1, soft=0):
+def mimo_dnn(sim_par, Nh, NL=1, soft=0):
     '''Simple DNN Detector/Classifier with residual connections for MIMO Equalization
     INPUT
     sim_par: simulation parameter object
@@ -662,7 +662,7 @@ def MIMODNN(sim_par, Nh, NL=1, soft=0):
     return dnnmimo, loss
 
 
-def opt_sel(opt_name='sgd', lrs=None):
+def optimizer_select(opt_name='sgd', lrs=None):
     '''Selection of an Keras optimizer
     INPUT
     opt_name: Optimizer as string
@@ -670,11 +670,13 @@ def opt_sel(opt_name='sgd', lrs=None):
     OUTPUT
     opt: Optimizer object from Keras
     '''
-    if lrs == None:
+    if lrs is None:
         if opt_name.casefold() == 'adam':
             # NOTE: learning_rate = 10**-4 (HyperCMDfull)
             opt = Adam()
         elif opt_name.casefold() == 'sgd':
+            opt = SGD()
+        elif opt_name.casefold() == 'sgd_nesterov':
             # lr = 1e-6/2, momentum = 0.9, nesterov = True
             opt = SGD(momentum=0.9, nesterov=True)
         elif opt_name.casefold() == 'nadam':
@@ -686,8 +688,11 @@ def opt_sel(opt_name='sgd', lrs=None):
             # NOTE: learning_rate = 10**-4 (HyperCMDfull)
             opt = Adam(learning_rate=lrs)
         elif opt_name.casefold() == 'sgd':
+            opt = SGD(learning_rate=lrs)
+        elif opt_name.casefold() == 'sgd_nesterov':
             # lr = 1e-6/2, momentum = 0.9, nesterov = True
-            opt = SGD(learning_rate=lrs, momentum=0.9, nesterov=True)
+            opt = SGD(learning_rate=lrs, momentum=0.9,
+                      nesterov=True)  # clipvalue=100
         elif opt_name.casefold() == 'nadam':
             opt = Nadam(learning_rate=lrs)
         else:
@@ -708,7 +713,7 @@ def data_gen_mimo(data_generator):
         yield (data[0], data[-1])
 
 
-class Data_gen_mimo2():
+class DataGenMIMO2():
     '''Data generator data_gen_mimo as object
     Used for debugging as it counts the number of execution iterations
     '''
@@ -755,8 +760,8 @@ if __name__ == '__main__':
     # computation accuracy: 'float16', 'float32', or 'float64'
     KB.set_floatx(load_set['prec'])
     if load_set['gpu'] == 0:
-        mt.tf_enable_GPU(0, 8)          # disable GPU
-        # mt.tf_enable_GPU(1, 1)        # enable GPU / default
+        mt.tf_enable_gpu(0, 8)          # disable GPU
+        # mt.tf_enable_gpu(1, 1)        # enable GPU / default
 
     # Create simulation objects
     mod = com.modulation(sim_set['Mod'])
@@ -785,7 +790,7 @@ if __name__ == '__main__':
     # TRAINING/ALGORITHM INITIALIZATION
     # Load DetNet
     if sim_set['algo'] == 'DetNet':
-        detnet = DetNet_graph(train_params, sim_set['fn_ext'])
+        detnet = DetNetGraph(train_params, sim_set['fn_ext'])
 
     if llr_mode == 2:
         # LLR comparison
@@ -795,11 +800,11 @@ if __name__ == '__main__':
         fn_ext_detnet = '_defsnr'
         train_params2 = mf.simulation_parameters(
             sim_params.Nt, sim_params.Nr, sim_params.L, sim_params.mod, train_set['batch_size'], train_ebn0_detnet, sim_params.rho)
-        detnet_llr = DetNet_graph(train_params2, fn_ext_detnet)
+        detnet_llr = DetNetGraph(train_params2, fn_ext_detnet)
 
     # Load MMNet or OAMPNet
     if sim_set['algo'] in ['MMNet', 'OAMPNet']:
-        mmnet = MMNet_graph(train_params, sim_set['algo'], sim_set['fn_ext'])
+        mmnet = MMNetGraph(train_params, sim_set['algo'], sim_set['fn_ext'])
 
     # CMDNet/CMD
     if sim_set['algo'] == 'CMD_fixed':
@@ -807,13 +812,13 @@ if __name__ == '__main__':
         if load_set['train'] == 1:
             fn2 = mf.filename_module(
                 'trainhist_', 'curves', 'CMD', '_binary_splin', sim_set)
-            train_hist = mt.training_history()
+            train_hist = mt.TrainingHistory()
             train_hist.filename = fn2.pathfile
             train_hist.dict2obj(saveobj.load(train_hist.filename))
             # [delta0, taui0], _ = train_hist.sel_best_weights()
             [delta0, taui0] = train_hist.params[-1]
         else:
-            [delta0, taui0] = CMD_initpar(
+            [delta0, taui0] = cmd_initpar(
                 sim_params.mod.M, sim_params.L, train_set['start_point'])
 
     cmd_algos = ['CMD', 'CMDNet', 'HyperCMD', 'CMDpar']     # CMDNet approaches
@@ -838,19 +843,19 @@ if __name__ == '__main__':
         else:
             # Default learning rate
             lrs = None
-        opt = opt_sel(opt_name=train_set['opt'], lrs=lrs)
+        opt = optimizer_select(opt_name=train_set['opt'], lrs=lrs)
 
     if sim_set['algo'] in cmd_algos:
         # Choose parameters / starting point
         if sim_set['algo'] == 'CMDpar':
-            [delta0, taui0] = CMD_initpar(
+            [delta0, taui0] = cmd_initpar(
                 sim_params.mod.M, sim_params.L, train_set['start_point'], k=3)
         else:
-            [delta0, taui0] = CMD_initpar(
+            [delta0, taui0] = cmd_initpar(
                 sim_params.mod.M, sim_params.L, train_set['start_point'])
 
         # Initialization
-        train_hist = mt.training_history()
+        train_hist = mt.TrainingHistory()
         train_hist.filename = fn.pathfile  # Set path for checkpoint saves
         # Load results if already trained
         if load_set['train'] == 1:
@@ -858,14 +863,14 @@ if __name__ == '__main__':
 
         # Create graph
         if sim_set['algo'] == 'HyperCMD':
-            CMDgraph = mt.HyperCMD_graph(train_params, delta0, taui0, soft=train_set['soft'],
-                                         multiloss=train_set['multiloss'], binopt=sim_set['binopt'])
+            CMDgraph = mt.HyperCMDGraph(train_params, delta0, taui0, soft=train_set['soft'],
+                                        multiloss=train_set['multiloss'], binopt=sim_set['binopt'])
         elif sim_set['algo'] == 'CMDpar':
-            CMDgraph = mt.CMDpar_graph(train_params, delta0, taui0, soft=train_set['soft'],
-                                       multiloss=train_set['multiloss'], binopt=sim_set['binopt'])
+            CMDgraph = mt.CMDparGraph(train_params, delta0, taui0, soft=train_set['soft'],
+                                      multiloss=train_set['multiloss'], binopt=sim_set['binopt'])
         else:
-            CMDgraph = CMD_graph(train_params, delta0, taui0, soft=train_set['soft'],
-                                 multiloss=train_set['multiloss'], binopt=sim_set['binopt'])
+            CMDgraph = CMDGraph(train_params, delta0, taui0, soft=train_set['soft'],
+                                multiloss=train_set['multiloss'], binopt=sim_set['binopt'])
         # Train
         train_hist = train(train_set['Nepoch'], train_hist, CMDgraph.train_inputs, CMDgraph.loss,
                            CMDgraph.params, opt, data_gen, saveobj,
@@ -1012,7 +1017,7 @@ if __name__ == '__main__':
             # Online training only with varying channel matrix
             if sim_set['algo'] == 'DNN':
                 # 1. Initialize online training DNN, define Keras model
-                dnnmimo, loss = MIMODNN(
+                dnnmimo, loss = mimo_dnn(
                     sim_par=sim_params, Nh=train_set['dnnwidth'], NL=train_set['dnndepth'], soft=train_set['soft'])
                 # Define metric
                 if train_set['soft'] == 1:
@@ -1066,7 +1071,8 @@ if __name__ == '__main__':
                     # Shuffle new channel matrix and train with Keras fit function
                     if train_set['lr_dyn']['mode'] == 2 and ii != 0:
                         # Workaround: Reset learning rate schedule per realization by new model compilation
-                        opt = opt_sel(opt_name=train_set['opt'], lrs=lrs)
+                        opt = optimizer_select(
+                            opt_name=train_set['opt'], lrs=lrs)
                         dnnmimo.compile(
                             optimizer=opt, loss=loss, metrics=metrics)
                     N_onlinedata = Ne_online * train_set['batch_size']
@@ -1085,7 +1091,7 @@ if __name__ == '__main__':
                         data_gen.gen_online_mimodata()
                         # Initialization for validation data + offset of 11 with data generator (reason unkown), so number of iterations needs to be increased
                         data_gen.online = Ne_online + 1 + 11
-                        # data_gen_mimo = Data_gen_mimo2()    # Easy debugging, just comment out and watch data_gen_mimo.it
+                        # data_gen_mimo = DataGenMIMO2()    # Easy debugging, just comment out and watch data_gen_mimo.it
                         history = dnnmimo.fit(data_gen_mimo(data_gen),
                                               batch_size=None,
                                               epochs=Ne_online,

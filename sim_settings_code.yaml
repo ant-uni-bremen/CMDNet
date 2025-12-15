@@ -1,8 +1,8 @@
 load_set:
   train: 1                      # start new training: 0 / load saved training: 1
-  sim: 1                        # start new simulation: 0 / load current one and refine: 1 / LLR simulation: 2
+  sim: 0                        # start new simulation: 0 / load current one and refine: 1 / LLR simulation: 2
   gpu: 1                        # training with GPU?, default: 1
-  prec: float32                 # computation accuracy: float16, float32, or float64 (default)
+  prec: float64                 # computation accuracy: float16, float32, or float64 (default)
   sv_ext: npz                   # save format
   fn_train: trainhist_          # name of training history file
   fn_sim: RES_                  # name of simulation file
@@ -60,7 +60,7 @@ train_set:
       - 1.0e-5
   soft: 0                       # training with CE or MSE loss, default: 0 (output probabilities), 1 (symbols)
   multiloss: 0                  # sum and weight loss of all iteration outputs, default: 0
-  opt: adam                     # optimizer, default: adam, sgd, nadam
+  opt: adam                     # optimizer, default: adam, sgd, nadam, sgd_nesterov
   # Online learning
   online: 0                     # number of online learning iterations, default: 0 (no online training), online training script: 100/1000
   # DNN

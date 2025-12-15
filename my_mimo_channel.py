@@ -109,7 +109,7 @@ def mimo_OneRingModel(N, angularSpread, cell_sector=360, compl=1, D=1/2):
 
     A. Adhikary, J. Nam, J.-Y. Ahn, and G. Caire, “Joint spatial division and
     multiplexing—the large-scale array regime,” IEEE Trans. Inf. Theory,
-    vol. 59, no. 10, pp. 6441–6463, 2013.
+    vol. 59, no. 10, pp. 6441-6463, 2013.
 
     The Matlab version is used in the article:
 

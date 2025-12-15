@@ -6,16 +6,24 @@ Created on Tue Jan 22 16:49:30 2019
 @author: beck
 """
 
+import os
+import psutil
+import json
 import numpy as np
 from my_math_operations import int2bin
 # Only for Levenshtein distance
 import jellyfish
 # Saving functions
-import os
 import h5py
-import json
+
 
 # General helpful functions
+
+def get_ram():
+    '''Get RAM usage in GB
+    '''
+    RAM = psutil.Process(os.getpid()).memory_info().rss / 1e9
+    return RAM
 
 
 def print_time(time):

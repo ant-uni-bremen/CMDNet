@@ -60,7 +60,7 @@ train_set:
       - 1.0e-5
   soft: 0                       # training with CE or MSE loss, default: 0 (output probabilities), 1 (symbols)
   multiloss: 0                  # sum and weight loss of all iteration outputs, default: 0
-  opt: adam                     # optimizer, default: adam, sgd, nadam
+  opt: adam                     # optimizer, default: adam, sgd, nadam, sgd_nesterov
   # Online learning
   online: 0                     # number of online learning iterations, default: 0 (no online training), online training script: 100/1000
   # DNN

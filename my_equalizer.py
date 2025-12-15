@@ -209,7 +209,7 @@ def sdrSolver(hBatch, yBatch, constellation):
     return fr, results
 
 
-def mfvi(data, mod, it, seq=1, binopt=0):
+def mfvi(data, mod, it, seq=1, binopt=0, noise_est=0):
     '''Linear channel equalizer based on mean-field variational inference (mfvi)
     --------------------------------------------------
     INPUT
@@ -223,7 +223,6 @@ def mfvi(data, mod, it, seq=1, binopt=0):
     s: estimated symbols
     gam: estimated prob of symbols
     '''
-    # TODO: Introduce noise_est
     def mfvinference_bin(data, mod, it, seq=1, noise_est=0):
         '''Inference based on mean-field variational inference
         Implementation according to "A Variational Inference Framework for Soft-In Soft-Out Detection in Multiple-Access Channels" - DD Lin et al., 2009, pp. 2355 (11)
@@ -272,7 +271,7 @@ def mfvi(data, mod, it, seq=1, binopt=0):
                 [1 - gam[:, :, np.newaxis], gam[:, :, np.newaxis]], axis=-1)
         return s, p_x
 
-    def mfvinference(data, mod, it, seq=1):
+    def mfvinference(data, mod, it, seq=1, noise_est=0):
         '''Inference based on mean-field variational inference for higher order modulation alphabets
         To be invented.
         '''
@@ -282,9 +281,9 @@ def mfvi(data, mod, it, seq=1, binopt=0):
         return s, p_x
 
     if mod.M == 2 and binopt == 1:
-        s, p_x = mfvinference_bin(data, mod, it, seq)
+        s, p_x = mfvinference_bin(data, mod, it, seq, noise_est=noise_est)
     else:
-        s, p_x = mfvinference(data, mod, it, seq)
+        s, p_x = mfvinference(data, mod, it, seq, noise_est=noise_est)
     return s, p_x
 
 
