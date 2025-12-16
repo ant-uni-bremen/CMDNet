@@ -1,36 +1,36 @@
 % This file was created by tikzplotlib v0.9.1.
 \begin{tikzpicture}
 
-\begin{axis}[
-legend cell align={left},
-legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=white!80!black},
-log basis y={10},
-tick align=outside,
-tick pos=left,
-x grid style={white!40!black},
-xlabel={ebn0},
-xmajorgrids,
-xmin=-6, xmax=40,
-xminorgrids,
-xtick style={color=black},
-y grid style={white!40!black},
-ylabel={cber},
-ymajorgrids,
-ymin=1e-06, ymax=1,
-yminorgrids,
-ymode=log,
-ytick style={color=black}
-]
-\addplot [semithick, blue, mark=*, mark size=3, mark options={solid}]
-table {%
--6 0.3039046875
-};
-\addlegendentry{AMP}
-\addplot [semithick, green!50!black]
-table {%
--6 0.239228710767672
-};
-\addlegendentry{AWGN BPSK}
-\end{axis}
+    \begin{axis}[
+            legend cell align={left},
+            legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=white!80!black},
+            log basis y={10},
+            tick align=outside,
+            tick pos=left,
+            x grid style={white!40!black},
+            xlabel={ebn0},
+            xmajorgrids,
+            xmin=-6, xmax=40,
+            xminorgrids,
+            xtick style={color=black},
+            y grid style={white!40!black},
+            ylabel={cber},
+            ymajorgrids,
+            ymin=1e-06, ymax=1,
+            yminorgrids,
+            ymode=log,
+            ytick style={color=black}
+        ]
+        \addplot [semithick, blue, mark=*, mark size=3, mark options={solid}]
+        table {%
+                -6 0.3039046875
+            };
+        \addlegendentry{AMP}
+        \addplot [semithick, green!50!black]
+        table {%
+                -6 0.239228710767672
+            };
+        \addlegendentry{AWGN BPSK}
+    \end{axis}
 
 \end{tikzpicture}

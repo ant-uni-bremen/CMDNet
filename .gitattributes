@@ -1,0 +1,12 @@
+# Alle Textdateien automatisch normalisieren
+* text=auto eol=lf
+
+# Scripts auf LF erzwingen
+# *.sh text eol=lf
+# *.py text eol=lf
+# *.js text eol=lf
+# *.css text eol=lf
+# *.html text eol=lf
+# *.py text eol=lf
+# *.tikz text eol=lf
+# *.tex text eol=lf

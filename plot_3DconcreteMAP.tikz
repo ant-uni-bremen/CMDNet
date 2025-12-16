@@ -1,36 +1,36 @@
 % 3D plot of Concrete MAP Objective function for two Gumbel random variables
 \begin{tikzpicture}
 
-% Set domain of the plot
-\pgfmathsetmacro\domainpgf{2.3}
-\begin{axis}[
-view={35}{30},
-tick align=outside,
-xlabel={$\gumbel_2$},
-ylabel={$\gumbel_1$},
-xmin=-\domainpgf, xmax=\domainpgf,
-ymin=-\domainpgf, ymax=\domainpgf,
-y dir=reverse,
-ymajorgrids,
-xmajorgrids,
-% TODO: z-axis has to be included plotopt file
-zmin=0, zmax=20,
-zlabel={$\obf(\gumbel_1,\gumbel_2,\softmaxtemp,\prior)$}, % ,\softmaxtemp=0.1, \prior=0.2, \noisestd^2=0.25, \yvar=-1
-zmajorgrids,
-every outer z axis line/.style={line width=1.4pt},
-every z tick label/.style={font=\fontsize{8}{9}\color{black}},
-]
-% Concrete MAP Objective Variables
-\pgfmathsetmacro\yrpgf{-1}				% 0.4
-\pgfmathsetmacro\noisevarpgf{0.25}		% 2 ** 2
-\pgfmathsetmacro\alphapgf{0.2}			% 0.5
-\pgfmathsetmacro\taupgf{0.1}			% 0.1
-\addplot3[surf, faceted color = blue!60, fill = blue!20, samples=16, domain=-\domainpgf:\domainpgf]
-%\addplot3[surf, faceted color = blue!60, fill = blue!20, samples=35]
-({y}, {x}, {1 / (2 * \noisevarpgf) * (\yrpgf - (-1 * exp((x + ln(\alphapgf)) / \taupgf) + 1 * exp((y + ln(1 - \alphapgf)) / \taupgf)) / (exp((x + ln(\alphapgf)) / \taupgf) + exp((y + ln(1 - \alphapgf)) / \taupgf)))^2 + (exp(-x) + exp(-y) + x + y)});
+    % Set domain of the plot
+    \pgfmathsetmacro\domainpgf{2.3}
+    \begin{axis}[
+            view={35}{30},
+            tick align=outside,
+            xlabel={$\gumbel_2$},
+            ylabel={$\gumbel_1$},
+            xmin=-\domainpgf, xmax=\domainpgf,
+            ymin=-\domainpgf, ymax=\domainpgf,
+            y dir=reverse,
+            ymajorgrids,
+            xmajorgrids,
+            % TODO: z-axis has to be included plotopt file
+            zmin=0, zmax=20,
+            zlabel={$\obf(\gumbel_1,\gumbel_2,\softmaxtemp,\prior)$}, % ,\softmaxtemp=0.1, \prior=0.2, \noisestd^2=0.25, \yvar=-1
+            zmajorgrids,
+            every outer z axis line/.style={line width=1.4pt},
+            every z tick label/.style={font=\fontsize{8}{9}\color{black}},
+        ]
+        % Concrete MAP Objective Variables
+        \pgfmathsetmacro\yrpgf{-1}				% 0.4
+        \pgfmathsetmacro\noisevarpgf{0.25}		% 2 ** 2
+        \pgfmathsetmacro\alphapgf{0.2}			% 0.5
+        \pgfmathsetmacro\taupgf{0.1}			% 0.1
+        \addplot3[surf, faceted color = blue!60, fill = blue!20, samples=16, domain=-\domainpgf:\domainpgf]
+        %\addplot3[surf, faceted color = blue!60, fill = blue!20, samples=35]
+        ({y}, {x}, {1 / (2 * \noisevarpgf) * (\yrpgf - (-1 * exp((x + ln(\alphapgf)) / \taupgf) + 1 * exp((y + ln(1 - \alphapgf)) / \taupgf)) / (exp((x + ln(\alphapgf)) / \taupgf) + exp((y + ln(1 - \alphapgf)) / \taupgf)))^2 + (exp(-x) + exp(-y) + x + y)});
 
-\addplot3[only marks, draw = red, fill = red, mark = *, mark size = 2pt] (-0.52, 1.13, 2.6507495);
-\addplot3[only marks, draw = red, fill = red, mark = *, mark size = 2pt] (1.77635684e-15, 1.77635684e-15, 9.99998474);
+        \addplot3[only marks, draw = red, fill = red, mark = *, mark size = 2pt] (-0.52, 1.13, 2.6507495);
+        \addplot3[only marks, draw = red, fill = red, mark = *, mark size = 2pt] (1.77635684e-15, 1.77635684e-15, 9.99998474);
 
-\end{axis}
+    \end{axis}
 \end{tikzpicture}
