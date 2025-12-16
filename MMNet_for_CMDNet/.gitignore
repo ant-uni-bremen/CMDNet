@@ -1,0 +1,4 @@
+*.out
+*.err
+__*__
+.vscode
