@@ -13,218 +13,21 @@ import matplotlib as mpl
 mpl.use('Agg')
 
 
-# Introducing own functions and variables
-compl = 1
-rho = 10
-cell_sector = 120
-fn_ext = '_OneRing10_120_snr4_27'
+# Introducing own functions
+import utilities.my_mimo_channel as mymimo
 
-
-def mimo_channel(Nb, Nr, Nt, compl=0):
-    '''Generate [Nb] MIMO channel matrices H with [Nr]x[Nt] Rayleigh Fading taps
-    compl: complex or real-valued
-    '''
-    if compl == 1:
-        H = (np.random.normal(0, 1, (Nb, Nr, Nt)) + 1j *
-             np.random.normal(0, 1, (Nb, Nr, Nt))) / np.sqrt(2 * Nr)
-    else:
-        H = np.random.normal(0, 1, (Nb, Nr, Nt)) / np.sqrt(Nr)
-    return H
-
-
-def batch_dot(a, b):
-    '''Computes the
-    matrix vector product: A*b
-    vector matrix product: a*B
-    matrix product: A*B
-    for a batch of matrices and vectors along dimension 0
-    Shape of tensors decides operation
-    '''
-    if len(a.shape) == 3 and len(b.shape) == 2:
-        y = np.einsum('nij,nj->ni', a, b)  # A*b
-    elif len(a.shape) == 2 and len(b.shape) == 3:
-        y = np.einsum('nj,nji->ni', a, b)  # b*A
-    elif len(a.shape) == 3 and len(b.shape) == 3:
-        y = np.einsum('nij,njk->nik', a, b)  # A*B
-    return y
-
-
-def mimo_channel_corr(Nb, Nr, Nt, compl=0, rho=0):
-    '''Generate [Nb] correlated MIMO channel matrices H with [Nr]x[Nt] Rayleigh Fading taps
-    According to Dirk's dissertation for a Uniform Linear Array
-    compl: complex or real-valued
-    rho: correlation
-    '''
-    # Channel matrix w/o correlations
-    H_w = mimo_channel(Nb, Nr, Nt, compl)  # * np.sqrt(Nr)
-    if rho == 0:
-        H = H_w
-    else:
-        # Version 1: Correlation at receiver and transmitter
-        # Correlation matrix at transmitter
-        # phi_row = rho ** (np.arange(Nt) ** 2)
-        # Phi_T = sp.linalg.toeplitz(phi_row, phi_row)
-        # Phi_T12 = sp.linalg.fractional_matrix_power(Phi_T, 0.5)
-        # # Correlation matrix at receiver
-        # phi_row = rho ** (np.arange(Nr) ** 2)
-        # Phi_R = sp.linalg.toeplitz(phi_row, phi_row)
-        # Phi_R12 = sp.linalg.fractional_matrix_power(Phi_R, 0.5)
-        # # Compute correlated channel matrix
-        # H = batch_dot(batch_dot(Phi_R12[np.newaxis, :, :], H_w), Phi_T12[np.newaxis, :, :])
-        # Version 2: Correlation only at receiver
-        phi_row = rho ** (np.arange(Nr) ** 2)
-        Phi_R = sp.linalg.toeplitz(phi_row, phi_row)
-        Phi_R12 = sp.linalg.fractional_matrix_power(Phi_R, 0.5)
-        H = batch_dot(Phi_R12[np.newaxis, :, :], H_w)
-        # H = H / np.sqrt(Nr)
-
-    # Test for correctness of implementation
-    # Phi_H = np.kron(Phi_T, Phi_R)
-    # H_vec = np.transpose(H, (0, 2, 1)).reshape((H.shape[0], -1))
-    # Phi_H2 = np.mean(np.einsum('ij,ik->ijk', H_vec, np.conj(H_vec)), axis = 0)
-    # # Same as Phi_T and Phi_R up to scaling factor...
-    # Phi_T2 = np.mean(mf.batch_dot(np.conj(np.transpose(H, (0, 2, 1))), H), axis = 0)
-    # Phi_R2 = np.mean(mf.batch_dot(H, np.conj(np.transpose(H, (0, 2, 1)))), axis = 0)
-
-    # Compare with alternative exact computation -> same
-    # Phi_H = np.kron(Phi_T, Phi_R)
-    # Phi_H12 = sp.linalg.fractional_matrix_power(Phi_H, 0.5)
-    # H_w_vec = np.transpose(H_w, (0, 2, 1)).reshape((H_w.shape[0], -1))
-    # H_vec2 = mf.batch_dot(Phi_H12[np.newaxis, : , :], H_w_vec)
-    # Phi_H3 = np.mean(np.einsum('ij,ik->ijk', H_vec2, np.conj(H_vec2)), axis = 0)
-    return H
-
-
-def matim2re(x, mode=1):
-    '''Converts imaginary vector/matrix to real
-    '''
-    if mode == 1:  # matrix conversion
-        if len(x.shape) == 3:
-            x = np.concatenate((np.concatenate((np.real(x), np.imag(x)), axis=1), np.concatenate(
-                (-np.imag(x), np.real(x)), axis=1)), axis=-1)
-        else:
-            x = np.concatenate((np.concatenate((np.real(x), np.imag(x))), np.concatenate(
-                (-np.imag(x), np.real(x)))), axis=1)
-    else:  # vector conversion
-        x = np.concatenate((np.real(x), np.imag(x)), axis=1)
-    return x
-
-
-def mimo_channel_onering(Nb, Nr, Nt, Phi_R12, compl=0):
-    '''Generate [Nb] correlated MIMO channel matrices H with [Nr]x[Nt] Rayleigh Fading taps
-    According to one ring model of Massive MIMO Book
-    compl: complex or real-valued
-    rho: correlation
-    '''
-    # Channel matrix w/o correlations
-    H_w = mimo_channel(Nb, Nr, Nt, compl)
-    H = np.zeros(H_w.shape, dtype='complex128')
-    # Correlation matrix at receiver
-    # theta_ind = np.random.randint(0, Phi_R12.shape[0], (Nb, Nt))
-    # Sampling without replacement
-    theta_ind = np.array([np.random.choice(
-        range(0, Phi_R12.shape[0]), (Nt), replace=0) for _ in range(Nb)])
-    H = np.einsum('nmij,njm->nim', Phi_R12[theta_ind, :, :], H_w)
-    # for ii in range(0, Nt):
-    #      theta_ind = np.random.randint(0, Phi_R12.shape[0], Nb)
-    #      # Compute correlated channel matrix column
-    #      H[:, :, ii] = batch_dot(Phi_R12[theta_ind, :, :], H_w[:, :, ii])
-    return H
-
-
-def mimo_OneRingModel(N, angularSpread, cell_sector=360):
-    '''This is an implementation of the channel covariance matrix with the
-    one-ring model. The implementation is based on Eq. (57) in the paper:
-
-    A. Adhikary, J. Nam, J.-Y. Ahn, and G. Caire, “Joint spatial division and
-    multiplexing—the large-scale array regime,” IEEE Trans. Inf. Theory,
-    vol. 59, no. 10, pp. 6441–6463, 2013.
-
-    This is used in the article:
-
-    Emil Björnson, Jakob Hoydis, Marios Kountouris, Mérouane Debbah, “Massive
-    MIMO Systems with Non-Ideal Hardware: Energy Efficiency, Estimation, and
-    Capacity Limits,” To appear in IEEE Transactions on Information Theory.
-
-    Download article: http://arxiv.org/pdf/1307.2584
-
-    This is version 1.0 (Last edited: 2014-08-26)
-
-    License: This code is licensed under the GPLv2 license. If you in any way
-    use this code for research that results in publications, please cite our
-    original article listed above.
-
-    INPUT
-    N: Number of antennas
-    angularSpread: Angular spread around the main angle of arrival, e.g., (10, 20)
-    theta_grad: Angle of arrival (in degree)
-    cell_sector: cell sector/possible angles of arrival (in degree)
-    OUTPUT
-    R: [N]x[N] channel covariance matrix
-    R12: Square root of R
-    '''
-    # Define integrand of Eq. (57) in [42]
-    def F(alpha, D, distance, theta, Delta):
-        return np.exp(-1j * 2 * np.pi * D * distance * np.sin(alpha + theta)) / (2 * Delta)
-    # def complex_integrate(func, a, b, **kwargs):
-    #     def real_func(x):
-    #         return np.real(func(x))
-    #     def imag_func(x):
-    #         return np.imag(func(x))
-    #     real_integral = integrate.quad(real_func, a, b, **kwargs)
-    #     imag_integral = integrate.quad(imag_func, a, b, **kwargs)
-    #     return (real_integral[0] + 1j*imag_integral[0], real_integral[1:], imag_integral[1:])
-    # Approximated angular spread
-    Delta = angularSpread * np.pi / 180
-    # Half a wavelength distance
-    D = 1 / 2
-    # Angle of arrival (30 degrees)
-    # theta = theta_grad * np.pi / 180 # np.pi / 6
-    # The covariance matrix has the Toeplitz structure, so we only need to
-    # compute the first row.
-    firstRow = np.zeros((cell_sector, N), dtype='complex128')
-    R12 = np.zeros((cell_sector, N, N), dtype='complex128')
-
-    # Go through all columns in the first row
-    for theta_grad in range(-int(cell_sector / 2), int(cell_sector / 2)):
-        theta = theta_grad * np.pi / 180
-        for col in range(0, N):
-            # Distance from the first antenna
-            distance = col
-            # Compute the integral as in [42]
-            re = integrate.quad(lambda alpha: np.real(
-                F(alpha, D, distance, theta, Delta)), -Delta, Delta)[0]
-            im = integrate.quad(lambda alpha: np.imag(
-                F(alpha, D, distance, theta, Delta)), -Delta, Delta)[0]
-            firstRow[theta_grad, col] = re + 1j * im
-        R12[theta_grad, :, :] = sp.linalg.fractional_matrix_power(
-            sp.linalg.toeplitz(firstRow[theta_grad, :]), 0.5)
-    # Compute the covarince matrix by utilizing the Toeplitz structure
-    # R = sp.linalg.toeplitz(firstRow)
-    return R12
-
-
-def generate_channel(Nb, Nr, Nt, compl=0, rho=0, Phi_R12=0):
+def generate_channel(Nb, Nr, Nt, complex_system=0, rho=0, Phi_R12=0):
     '''Generates complex or real-valued [Nr]x[Nt] channel according to one ring correlation model
     Nb: Number of channel realizations
     Nr: Number of receive antennas
     Nt: Number of transmit antennas
-    compl: Complex (1) / real (0)
+    complex_system: Complex (1) / real (0)
     Phi_R12: correlation matrices
     '''
     if rho > 1:
-        if compl == 1:
-            H = mimo_channel_onering(
-                Nb, int(Nr / 2), int(Nt / 2), Phi_R12, compl)
-            Hr = matim2re(H, 1)
-        else:
-            Hr = mimo_channel_onering(Nb, Nr, Nt, Phi_R12, compl)
+        Hr = mymimo.generate_channel_onering(Nb, Nr, Nt, Phi_R12, compl=complex_system)
     else:
-        if compl == 1:
-            H = mimo_channel_corr(Nb, int(Nr / 2), int(Nt / 2), compl, rho)
-            Hr = matim2re(H, 1)
-        else:
-            Hr = mimo_channel_corr(Nb, Nr, Nt, compl, rho)
+        Hr = mymimo.generate_channel(Nb, Nr, Nt, compl=complex_system, rho=rho)
     return Hr
 ##
 
@@ -327,6 +130,34 @@ parser.add_argument('--log',
                     action='store_true',
                     help='Log data mode')
 
+# Newly added parser arguments
+parser.add_argument('--angularspread',
+                    type=float,
+                    required=False,
+                    default=0,
+                    help='AngularSpread in One Ring massive MIMO model')
+parser.add_argument('--cellsector',
+                    type=float,
+                    required=False,
+                    default=120,
+                    help='Cell sector in One Ring massive MIMO model')
+parser.add_argument('--complex',
+                    type=int,
+                    required=False,
+                    default=1,
+                    help='Cell sector in One Ring massive MIMO model')
+parser.add_argument('--filename_extension',
+                    type=str,
+                    required=False,
+                    default='',
+                    help='File ending specifying details of the simulation')
+parser.add_argument('--save_directory',
+                    type=str,
+                    required=False,
+                    default='',
+                    help='Save directory')
+
+
 args = parser.parse_args()
 # Ignore if you do not have multiple GPUs
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
@@ -349,15 +180,20 @@ params = {
     'start_from': args.start_from,
     'data': args.data,
     'linear_name': args.linear,
-    'denoiser_name': args.denoiser
+    'denoiser_name': args.denoiser,
+    'complex': args.complex,
+    'angular_spread': int(args.angularspread),
+    'cell_sector': int(args.cellsector),
+    'filename_extension': args.filename_extension,
+    'save_directory': args.save_directory,
 }
 
 # -- One Ring correlation matrices --------------------
-if rho > 1:
-    if compl == 1:
-        Phi_R12 = mimo_OneRingModel(int(2 * params['N'] / 2), rho, cell_sector)
+if params['angular_spread'] > 1:
+    if params['complex'] == 1:
+        Phi_R12 = mymimo.mimo_OneRingModel(N=int(2 * params['N'] / 2), angularSpread=params['angular_spread'], cell_sector=params['cell_sector'], compl=params['complex'])
     else:
-        Phi_R12 = mimo_OneRingModel(2 * params['N'], rho, cell_sector)
+        Phi_R12 = mymimo.mimo_OneRingModel(N=2 * params['N'], angularSpread=params['angular_spread'], cell_sector=params['cell_sector'], compl=params['complex'])
 else:
     Phi_R12 = 0
 # -----------------------------------------------------
@@ -454,7 +290,7 @@ for it in range(args.train_iterations):
         # sample_ids = np.random.randint(0, np.shape(train_data)[0], params['batch_size'])
         # feed_dict[H] = train_data[sample_ids]
         feed_dict[H] = generate_channel(
-            params['batch_size'], 2 * params['N'], 2 * params['K'], compl, rho, Phi_R12)
+            params['batch_size'], 2 * params['N'], 2 * params['K'], params['complex'], params['angular_spread'], Phi_R12)
     if record_flag:
         feed_dict_test = {
             batch_size: args.test_batch_size,
@@ -468,7 +304,7 @@ for it in range(args.train_iterations):
             # sample_ids = np.random.randint(0, np.shape(test_data)[0], args.test_batch_size)
             # feed_dict[H] = test_data[sample_ids]
             feed_dict[H] = generate_channel(
-                args.test_batch_size, 2 * params['N'], 2 * params['K'], compl, rho, Phi_R12)
+                args.test_batch_size, 2 * params['N'], 2 * params['K'], params['complex'], params['angular_spread'], Phi_R12)
         before_acc = 1.-sess.run(accuracy, feed_dict_test)
         record['before'].append(before_acc)
 
@@ -476,7 +312,7 @@ for it in range(args.train_iterations):
     sess.run(train, feed_dict)
 
     # Test
-    if (it % args.test_every == 0):
+    if (it % args.test_every == 0) or (it == args.train_iterations - 1):
         feed_dict = {
             batch_size: args.test_batch_size,
             snr_db_max: params['SNR_dB_max'],
@@ -487,7 +323,7 @@ for it in range(args.train_iterations):
             # sample_ids = np.random.randint(0, np.shape(test_data)[0], args.test_batch_size)
             # feed_dict[H] = test_data[sample_ids]
             feed_dict[H] = generate_channel(
-                args.test_batch_size, 2 * params['N'], 2 * params['K'], compl, rho, Phi_R12)
+                args.test_batch_size, 2 * params['N'], 2 * params['K'], params['complex'], params['angular_spread'], Phi_R12)
         if args.log:
             # test_accuracy_, test_loss_, logs_, x_, H_, test_summary_= sess.run([accuracy, loss, logs, x, H, summary], feed_dict)
             test_accuracy_, test_loss_, logs_, x_, H_ = sess.run(
@@ -526,11 +362,14 @@ for it in range(args.train_iterations):
         # saver.save(sess, './reports/'+args.saveas, global_step=it)
         # test_summary_writer.add_summary(test_summary_, it)
         # train_summary_writer.add_summary(train_summary_, it)
-test_data = generate_channel(
-    args.test_batch_size, 2 * params['N'], 2 * params['K'], compl, rho, Phi_R12)
-result = model_eval(test_data, params['SNR_dB_min'], params['SNR_dB_max'],
-                    mmse_accuracy, accuracy, batch_size, snr_db_min, snr_db_max, H, sess)
-print(result)
+print('Training completed.')
+# Not useful? ------------------
+# test_data = generate_channel(
+#     args.test_batch_size, 2 * params['N'], 2 * params['K'], params['complex'], params['angular_spread'], Phi_R12)
+# result = model_eval(test_data, params['SNR_dB_min'], params['SNR_dB_max'],
+#                     mmse_accuracy, accuracy, batch_size, snr_db_min, snr_db_max, H, sess)
+# print(result)
+# ------------------------------
 # SNR_dBs = np.linspace(params['SNR_dB_min'],params['SNR_dB_max'],params['SNR_dB_max']-params['SNR_dB_min']+1)
 # accs_mmse = np.zeros(shape=SNR_dBs.shape)
 # accs_NN = np.zeros(shape=SNR_dBs.shape)
@@ -578,7 +417,7 @@ elif params['modulation'] == 'QAM_64':
 else:
     M = 4
     mod = 'QPSK'
-# if compl == 1:
+# if params['complex'] == 1:
 #     mod = 'QPSK'
 # else:
 #     mod = 'BPSK'
@@ -612,15 +451,15 @@ def check_path(pathfile, verbose=0):
 
 
 filename = params['denoiser_name'] + '_' + mod + '_{}_{}_{}_snr{}_{}'.format(
-    Nt2, Nr2, L, int(np.round(ebn0db_low)), int(np.round(ebn0db_high))) + fn_ext
-ospath = ''
-path = os.path.join('curves', mod, '{}x{}'.format(Nt2, Nr2))
-path2 = os.path.join('models', mod, '{}x{}'.format(Nt2, Nr2))
-path3 = os.path.join(path2, filename)
+    Nt2, Nr2, L, int(np.round(ebn0db_low)), int(np.round(ebn0db_high))) + params['filename_extension']
+
+
 
 
 # Save model for import in own script: for detailed evaluation
-pathfile = os.path.join(ospath, path3, filename)  # + '.ckpt'
+path_curves = os.path.join('curves', mod, '{}x{}'.format(Nt2, Nr2))
+path_models = os.path.join('models', mod, '{}x{}'.format(Nt2, Nr2), filename)
+pathfile = os.path.join(params['save_directory'], path_models, filename)  # + '.ckpt'
 check_path(pathfile, verbose=1)
 save_path = saver.save(sess, pathfile)  # , global_step = train_iter
 
@@ -633,7 +472,7 @@ SNR_dBs = EbN0 + snr_shift
 accs_mmse = np.zeros(shape=SNR_dBs.shape)
 accs_NN = np.zeros(shape=SNR_dBs.shape)
 # iterations = 30
-N_test = 10000
+N_test = args.test_batch_size # 10000
 print("PERTURBATIONS ON")
 for i in range(SNR_dBs.shape[0]):
     noise_ = []
@@ -659,7 +498,7 @@ for i in range(SNR_dBs.shape[0]):
             # sample_ids = np.random.randint(0, np.shape(test_data)[0], 5000)
             # feed_dict[H] = test_data[sample_ids]
             feed_dict[H] = generate_channel(
-                N_test, 2 * params['N'], 2 * params['K'], compl, rho, Phi_R12)
+                N_test, 2 * params['N'], 2 * params['K'], params['complex'], params['angular_spread'], Phi_R12)
         acc = sess.run([mmse_accuracy, accuracy], feed_dict)
         accs_mmse[i] += acc[0]
         accs_NN[i] += acc[1]
@@ -680,6 +519,6 @@ ser = 1. - accs_NN
 
 
 # Last save for quick evaluation
-pathfile = os.path.join(ospath, path, 'SER_' + filename + '.npz')
+pathfile = os.path.join(params['save_directory'], path_curves, 'SER_' + filename + '.npz')
 check_path(pathfile, verbose=0)
 np.savez(pathfile, ebn0=EbN0, ser=ser)

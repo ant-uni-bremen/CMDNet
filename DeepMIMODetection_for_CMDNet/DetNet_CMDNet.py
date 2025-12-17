@@ -36,27 +36,32 @@ sess = tf.InteractiveSession()
 
 
 # parameters
-K = 60  # 20 Nt * 2
-N = 60  # 30 Nr * 2
+K = 60                                  # 20 Nt * 2
+N = 60                                  # 30 Nr * 2
 snrdb_low = 7  # 7
 snrdb_high = 14  # 14 | 35
 snr_low = 10.0 ** (snrdb_low/10.0)
 snr_high = 10.0 ** (snrdb_high/10.0)
-L = 3 * K  # 90 (Default) #3 * K (VCDN) / K (ShVCDN) (Paper)
+L = 3 * K                               # 90 (Default) #3 * K (VCDN) / K (ShVCDN) (Paper)
 v_size = 2 * K
 hl_size = 8 * K
 startingLearningRate = 0.0001
 decay_factor = 0.97
 decay_step_size = 1000
-train_iter = 20000  # 20000
-train_batch_size = 5000  # 5000
+train_iter = 10                         # 20000
+train_batch_size = 5000                 # 5000
 test_iter = 200
 test_batch_size = 1000
 LOG_LOSS = 1
 res_alpha = 0.9
 num_snr = 18
 snrdb_low_test = 4.0
-snrdb_high_test = 21.0  # SNR
+snrdb_high_test = 21.0                  # SNR
+# Own parameters
+it_print = 1                            # 100
+it_checkpoint = 1000                    # 1000
+fn_ext = '_test'                        # ''
+
 
 """Data generation for train and test phases
 In this example, both functions are the same.
@@ -208,24 +213,24 @@ init_op = tf.initialize_all_variables()
 sess.run(init_op)
 # Training DetNet
 # Save graph while Training
-pathfile = 'tf_graphs/detnet_{}_{}_{}snr{}_{}/'.format(
-    K/2, N/2, L, snrdb_low, snrdb_high)
+pathfile = 'models/detnet_{}_{}_{}_snr{}_{}{}/'.format(
+    int(K/2), int(N/2), L, snrdb_low, snrdb_high, fn_ext)
 saver = tf.train.Saver()
 for i in range(train_iter):  # num of train iter
     batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_train(
         train_batch_size, K, N, snr_low, snr_high)
     train_step.run(feed_dict={HY: batch_HY, HH: batch_HH, X: batch_X})
-    if i % 1000 == 0:
+    if i % it_checkpoint == 0:
         saver.save(sess, pathfile +
-                   'detnet_{}_{}_{}'.format(K/2, N/2, L), global_step=i)
-    if i % 100 == 0:
+                   'detnet_{}_{}_{}'.format(int(K/2), int(N/2), L), global_step=i)
+    if i % it_print == 0:
         batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_iid_test(
             train_batch_size, K, N, snr_low, snr_high)
         results = sess.run([LOSS[-1], BER[-1]],
                            {HY: batch_HY, HH: batch_HH, X: batch_X})
         print_string = [i]+results
         print(' '.join(f'{x}' for x in print_string))
-saver.save(sess, pathfile+'detnet_{}_{}_{}'.format(K/2, N/2, L), global_step=i+1)
+saver.save(sess, pathfile+'detnet_{}_{}_{}'.format(int(K/2), int(N/2), L), global_step=i+1)
 
 
 # Testing the trained model
@@ -261,8 +266,8 @@ print(times)
 
 # Save simulation results into file
 EbN0 = snrdb_list - 10 * np.log10(2)
-pathfile = os.path.join('simulation_results', 'BER_DETNET_{}_{}_{}snr{}_{}.npz'.format(
-    K/2, N/2, L, snrdb_low, snrdb_high))
+pathfile = os.path.join('simulation_results', 'BER_DETNET_{}_{}_{}_snr{}_{}{}.npz'.format(
+    int(K/2), int(N/2), L, snrdb_low, snrdb_high, fn_ext))
 if os.path.isfile(pathfile):
     os.remove(pathfile)
 np.savez(pathfile, ebn0=EbN0, ber=bers)

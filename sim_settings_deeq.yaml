@@ -9,7 +9,7 @@ load_set:
 
 sim_set:
   algo: CMDNet                  # MAP, MF, LS, MMSE, MFVIseq, MFVIpar, AMP, SDR, CMD, CMD_fixed, DetNet, MMNet, OAMPNet, DNN
-  fn_ext: '_binary_deeq'        # Filename extension, e.g., _binary_tau0.1, _snr13_36, _defsnr, _binary_online100_snr8_Ne100000, _online100_snr8_Ne100000_NL2NW512
+  fn_ext: '_binary_deeq_test'   # Filename extension, e.g., _binary_tau0.1, _snr13_36, _defsnr, _binary_online100_snr8_Ne100000, _online100_snr8_Ne100000_NL2NW512
   path: curves                  # path of simulation files
   Nt: 8                         # number of transmit antennas
   Nr: 8                         # number of receive antennas

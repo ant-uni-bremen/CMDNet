@@ -11,6 +11,8 @@ import os
 import tensorflow as tf
 import numpy as np
 import time as tm
+import DetNet_CMDNet as detnet_cmd
+
 
 # parameters
 K = 60  # 20 Nt * 2
@@ -31,78 +33,19 @@ snrdb_low = 7  # 10 - 3 # 7
 snrdb_high = 14  # 30 - 3 # 14
 snr_low = 10.0 ** (snrdb_low/10.0)
 snr_high = 10.0 ** (snrdb_high/10.0)
-
-
-def generate_channel(B, N, K):
-    if K % 2 == 0 and N % 2 == 0:
-        H_re = np.random.randn(B, int(N/2), int(K/2))
-        H_im = np.random.randn(B, int(N/2), int(K/2))
-        # H_ = np.concatenate(((np.concatenate((H_re, -H_im), -1), np.concatenate((H_im, H_re), -1))), 1) / np.sqrt(N)
-        H_ = np.concatenate(((np.concatenate(
-            (H_re, -H_im), -1), np.concatenate((H_im, H_re), -1))), 1) / np.sqrt(2 * N / 2)
-    else:
-        H_ = np.random.randn(B, N, K) / np.sqrt(N)
-    return H_
-
-# def mimo_channel(Nr, Ntaps, N):
-#    '''Generate N MIMO channel matrices with NtapsxNtaps Rayleigh Fading taps
-#    '''
-#    H = (np.random.normal(0, 1, (N, Nr, Ntaps)) + 1j * np.random.normal(0, 1, (N, Nr, Ntaps))) / np.sqrt(2 * Nr)
-#    return H
-
-
-def generate_data_iid_test(B, K, N, snr_low, snr_high):
-    H_ = generate_channel(B, N, K)
-    # W_=np.zeros([B,K,K])
-    x_ = np.sign(np.random.rand(B, K)-0.5)
-    y_ = np.zeros([B, N])
-    w = np.random.randn(B, N)
-    Hy_ = x_*0
-    HH_ = np.zeros([B, K, K])
-    SNR_ = np.zeros([B])
-    for i in range(B):
-        SNR = np.random.uniform(low=snr_low, high=snr_high)
-        H = H_[i, :, :]
-        tmp_snr = (H.T.dot(H)).trace()/K  # Calculate effective SNR ???
-        # H_[i,:,:]=H
-        # Adjust noise variance to channel matrix realization ???
-        y_[i, :] = (H.dot(x_[i, :])+w[i, :]*np.sqrt(tmp_snr)/np.sqrt(SNR))
-        # y_[i,:]=(H.dot(x_[i,:])+w[i,:]/np.sqrt(SNR))
-        Hy_[i, :] = H.T.dot(y_[i, :])
-        HH_[i, :, :] = H.T.dot(H_[i, :, :])
-        SNR_[i] = SNR
-    return y_, H_, Hy_, HH_, x_, SNR_
-
-
-def generate_data_train(B, K, N, snr_low, snr_high):
-    H_ = generate_channel(B, N, K)
-    # W_=np.zeros([B,K,K])
-    x_ = np.sign(np.random.rand(B, K)-0.5)
-    y_ = np.zeros([B, N])
-    w = np.random.randn(B, N)
-    Hy_ = x_*0
-    HH_ = np.zeros([B, K, K])
-    SNR_ = np.zeros([B])
-    for i in range(B):
-        SNR = np.random.uniform(low=snr_low, high=snr_high)
-        H = H_[i, :, :]
-        tmp_snr = (H.T.dot(H)).trace()/K
-        # H_[i,:,:]=H
-        y_[i, :] = (H.dot(x_[i, :])+w[i, :]*np.sqrt(tmp_snr)/np.sqrt(SNR))
-        # y_[i,:]=(H.dot(x_[i,:])+w[i,:]/np.sqrt(SNR))
-        Hy_[i, :] = H.T.dot(y_[i, :])
-        HH_[i, :, :] = H.T.dot(H_[i, :, :])
-        SNR_[i] = SNR
-    return y_, H_, Hy_, HH_, x_, SNR_
+# Own parameters
+it_print = 100                          # 100
+it_checkpoint = 1000                    # 1000
+fn_ext = '_test'                        # ''
 
 
 # Load Detnet
 
 sess = tf.InteractiveSession()  # sess = tf.Session()
-pathfile = 'tf_graphs/detnet_{}_{}_{}snr{}_{}/'.format(
-    K/2, N/2, L, snrdb_low, snrdb_high)
+pathfile = 'models/detnet_{}_{}_{}_snr{}_{}{}/'.format(
+    int(K/2), int(N/2), L, snrdb_low, snrdb_high, fn_ext)
 new_saver = tf.train.import_meta_graph(pathfile+'detnet_{}_{}_{}-'.format(
-    K/2, N/2, L, snrdb_low, snrdb_high)+str(loaded_epoch)+'.meta')
+    int(K/2), int(N/2), L, snrdb_low, snrdb_high)+str(loaded_epoch)+'.meta')
 new_saver.restore(sess, tf.train.latest_checkpoint(pathfile))
 
 
@@ -120,21 +63,21 @@ if do_train == 1:
     train_step = tf.get_collection("train_step")[0]
     saver = tf.train.Saver()
     for i in range(loaded_epoch, train_iter):  # num of train iter
-        batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_train(
+        batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = detnet_cmd.generate_data_train(
             train_batch_size, K, N, snr_low, snr_high)
         train_step.run(feed_dict={HY: batch_HY, HH: batch_HH, X: batch_X})
-        if i % 1000 == 0:
+        if i % it_checkpoint == 0:
             saver.save(sess, pathfile +
-                       'detnet_{}_{}_{}'.format(K/2, N/2, L), global_step=i)
-        if i % 100 == 0:
-            batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_iid_test(
+                       'detnet_{}_{}_{}'.format(int(K/2), int(N/2), L), global_step=i)
+        if i % it_print == 0:
+            batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = detnet_cmd.generate_data_iid_test(
                 train_batch_size, K, N, snr_low, snr_high)
             results = sess.run(
                 [LOSS, BER], {HY: batch_HY, HH: batch_HH, X: batch_X})
             print_string = [i]+results
             print(' '.join(f'{x}' for x in print_string))
-    saver.save(sess, pathfile+'detnet_{}_{}_{}'.format(K /
-               2, N/2, L), global_step=i+1)
+    saver.save(sess, pathfile+'detnet_{}_{}_{}'.format(int(K /
+               2), int(N/2), L), global_step=i+1)
 
 
 # TEST
@@ -152,7 +95,7 @@ for j in range(num_snr):
         print(snrdb_list[j])
         print('test iteration:')
         print(jj)
-        batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_iid_test(
+        batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = detnet_cmd.generate_data_iid_test(
             test_batch_size, K, N, snr_list[j], snr_list[j])
         tic = tm.time()
         tmp_bers[:, jj] = np.array(
@@ -173,8 +116,8 @@ print(times)
 # Save simulation results into file
 EbN0 = snrdb_list - 10 * np.log10(2)
 
-pathfile = os.path.join('simulation_results', 'BER_DETNET_{}_{}_{}snr{}_{}.npz'.format(
-    K/2, N/2, L, snrdb_low, snrdb_high))
+pathfile = os.path.join('simulation_results', 'BER_DETNET_{}_{}_{}_snr{}_{}{}.npz'.format(
+    int(K/2), int(N/2), L, snrdb_low, snrdb_high, fn_ext))
 if os.path.isfile(pathfile):
     os.remove(pathfile)
 np.savez(pathfile, ebn0=EbN0, ber=bers)

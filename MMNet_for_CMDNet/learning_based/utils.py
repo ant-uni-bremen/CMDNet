@@ -26,6 +26,7 @@ def model_eval(test_data, snr_min, snr_max, mmse_accuracy, accuracy, batch_size,
             nn   += acc[1] / iterations
         accs_mmse.append((SNR_dBs[i], 1. - mmse))#+= acc[0]/iterations
         accs_NN.append((SNR_dBs[i], 1. - nn))# += acc[1]/iterations
+        print('MMSE: {:.2E}'.format(mmse) + ', MMNet: {:.2E}'.format(nn))
     return {'mmse':accs_mmse, 'model':accs_NN}
 
 def demodulate(y, constellation):

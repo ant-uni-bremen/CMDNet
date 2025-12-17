@@ -10,6 +10,8 @@ import pickle as pkl
 # Own additions
 import scipy as sp
 import scipy.integrate as integrate
+import utilities.my_mimo_channel as mymimo
+
 """
 This file is used to train and test the DetNet architecture in the soft decision output scenario.
 The constellation used is BPSK and the channel is real
@@ -81,14 +83,18 @@ snrdb_low_test & snrdb_high_test & num_snr - when testing, num_snr different SNR
 """
 
 
-# own parameter
-own = 0     # if on own computer
-compl = 1
-rho = 10
-cell_sector = 120
-it_print = 100
-fn_ext = '_OneRing10_120'  # _rxrho07 _OneRing20
-if own == 1:
+# Own parameter
+no_gpu = 0                  # if without gpu
+compl = 1                   # 1
+rho = 0                     # 0, 10, 20
+cell_sector = 120           # 120
+it_print = 1                # 100
+fn_ext = '_test'            # _rxrho07, _OneRing20, _OneRing10_120
+# Save in CMDNet root folder
+# save_dir = ''
+save_dir = os.path.join(os.path.dirname(__file__), '..')
+save_dir = os.path.abspath(save_dir)
+if no_gpu == 1:
     num_GPU = 0
     num_cores = 8
     config = tf.ConfigProto(intra_op_parallelism_threads=num_cores,
@@ -106,30 +112,30 @@ else:
 
 
 # parameters
-K = 64              # default: 10, Nt * 2
-N = 128             # default: 20, Nr * 2
-ebn0db_low = 4      # 4, default: 4
-ebn0db_high = 11    # 27, default: 11
+K = 64                                  # default: 10, Nt * 2
+N = 64                                  # default: 20, Nr * 2
+ebn0db_low = 4                          # 4, default: 4
+ebn0db_high = 11                        # 27, default: 11
 snr_shift = 10 * np.log10(2)
-snrdb_low = ebn0db_low + snr_shift  # default: 7
-snrdb_high = ebn0db_high + snr_shift  # default: 14
+snrdb_low = ebn0db_low + snr_shift      # default: 7
+snrdb_high = ebn0db_high + snr_shift    # default: 14
 snr_low = 10.0 ** (snrdb_low/10.0)
 snr_high = 10.0 ** (snrdb_high/10.0)
-L = K  # default: 50 #default (Paper): 3 * K (VCDN) / K (ShVCDN)
-v_size = 4*K  # default (Paper): 2 * K, default: 4
-hl_size = 12*K  # default (Paper): 8 * K, default: 12
-startingLearningRate = 0.0005  # default: 0.0005/0.0001 (Paper)
+L = K                                   # default: 50 #default (Paper): 3 * K (VCDN) / K (ShVCDN)
+v_size = 4*K                            # default (Paper): 2 * K, default: 4
+hl_size = 12*K                          # default (Paper): 8 * K, default: 12
+startingLearningRate = 0.0005           # default: 0.0005/0.0001 (Paper)
 decay_factor = 0.97
 decay_step_size = 1000
-train_iter = 40000  # default: 40000, default (HD): 200000
-train_batch_size = 5000  # default: 5000, default (HD): 3000
-test_iter = 5  # default: 50
-test_batch_size = 1000  # default: 500
+train_iter = 40000                      # default: 40000, default (HD): 200000
+train_batch_size = 5000                 # default: 5000, default (HD): 3000
+test_iter = 50                          # default: 50
+test_batch_size = 1000                  # default: 500
 LOG_LOSS = 1
 res_alpha = 0.9
-num_snr = 18  # default: 6
-snrdb_low_test = -6 + 3  # default: 8.0
-snrdb_high_test = 36 + 3  # SNR, default: 13.0
+num_snr = 18                            # default: 6
+snrdb_low_test = -6 + 3                 # default: 8.0
+snrdb_high_test = 36 + 3                # SNR, default: 13.0
 
 
 # original parameters
@@ -190,188 +196,6 @@ currently both test and train are over i.i.d gaussian channel.
 """
 
 
-def mimo_channel(Nb, Nr, Nt, compl=0):
-    '''Generate [Nb] MIMO channel matrices H with [Nr]x[Nt] Rayleigh Fading taps
-    compl: complex or real-valued
-    '''
-    if compl == 1:
-        H = (np.random.normal(0, 1, (Nb, Nr, Nt)) + 1j *
-             np.random.normal(0, 1, (Nb, Nr, Nt))) / np.sqrt(2 * Nr)
-    else:
-        H = np.random.normal(0, 1, (Nb, Nr, Nt)) / np.sqrt(Nr)
-    return H
-
-
-def batch_dot(a, b):
-    '''Computes the
-    matrix vector product: A*b
-    vector matrix product: a*B
-    matrix product: A*B
-    for a batch of matrices and vectors along dimension 0
-    Shape of tensors decides operation
-    '''
-    if len(a.shape) == 3 and len(b.shape) == 2:
-        y = np.einsum('nij,nj->ni', a, b)  # A*b
-    elif len(a.shape) == 2 and len(b.shape) == 3:
-        y = np.einsum('nj,nji->ni', a, b)  # b*A
-    elif len(a.shape) == 3 and len(b.shape) == 3:
-        y = np.einsum('nij,njk->nik', a, b)  # A*B
-    return y
-
-
-def mimo_channel_corr(Nb, Nr, Nt, compl=0, rho=0):
-    '''Generate [Nb] correlated MIMO channel matrices H with [Nr]x[Nt] Rayleigh Fading taps
-    According to Dirk's dissertation for a Uniform Linear Array
-    compl: complex or real-valued
-    rho: correlation
-    '''
-    # Channel matrix w/o correlations
-    H_w = mimo_channel(Nb, Nr, Nt, compl)  # * np.sqrt(Nr)
-    if rho == 0:
-        H = H_w
-    else:
-        # Version 1: Correlation at receiver and transmitter
-        # Correlation matrix at transmitter
-        # phi_row = rho ** (np.arange(Nt) ** 2)
-        # Phi_T = sp.linalg.toeplitz(phi_row, phi_row)
-        # Phi_T12 = sp.linalg.fractional_matrix_power(Phi_T, 0.5)
-        # # Correlation matrix at receiver
-        # phi_row = rho ** (np.arange(Nr) ** 2)
-        # Phi_R = sp.linalg.toeplitz(phi_row, phi_row)
-        # Phi_R12 = sp.linalg.fractional_matrix_power(Phi_R, 0.5)
-        # # Compute correlated channel matrix
-        # H = batch_dot(batch_dot(Phi_R12[np.newaxis, :, :], H_w), Phi_T12[np.newaxis, :, :])
-        # Version 2: Correlation only at receiver
-        phi_row = rho ** (np.arange(Nr) ** 2)
-        Phi_R = sp.linalg.toeplitz(phi_row, phi_row)
-        Phi_R12 = sp.linalg.fractional_matrix_power(Phi_R, 0.5)
-        H = batch_dot(Phi_R12[np.newaxis, :, :], H_w)
-        # H = H / np.sqrt(Nr)
-
-    # Test for correctness of implementation
-    # Phi_H = np.kron(Phi_T, Phi_R)
-    # H_vec = np.transpose(H, (0, 2, 1)).reshape((H.shape[0], -1))
-    # Phi_H2 = np.mean(np.einsum('ij,ik->ijk', H_vec, np.conj(H_vec)), axis = 0)
-    # # Same as Phi_T and Phi_R up to scaling factor...
-    # Phi_T2 = np.mean(mf.batch_dot(np.conj(np.transpose(H, (0, 2, 1))), H), axis = 0)
-    # Phi_R2 = np.mean(mf.batch_dot(H, np.conj(np.transpose(H, (0, 2, 1)))), axis = 0)
-
-    # Compare with alternative exact computation -> same
-    # Phi_H = np.kron(Phi_T, Phi_R)
-    # Phi_H12 = sp.linalg.fractional_matrix_power(Phi_H, 0.5)
-    # H_w_vec = np.transpose(H_w, (0, 2, 1)).reshape((H_w.shape[0], -1))
-    # H_vec2 = mf.batch_dot(Phi_H12[np.newaxis, : , :], H_w_vec)
-    # Phi_H3 = np.mean(np.einsum('ij,ik->ijk', H_vec2, np.conj(H_vec2)), axis = 0)
-    return H
-
-
-def matim2re(x, mode=1):
-    '''Converts imaginary vector/matrix to real
-    '''
-    if mode == 1:  # matrix conversion
-        if len(x.shape) == 3:
-            x = np.concatenate((np.concatenate((np.real(x), np.imag(x)), axis=1), np.concatenate(
-                (-np.imag(x), np.real(x)), axis=1)), axis=-1)
-        else:
-            x = np.concatenate((np.concatenate((np.real(x), np.imag(x))), np.concatenate(
-                (-np.imag(x), np.real(x)))), axis=1)
-    else:  # vector conversion
-        x = np.concatenate((np.real(x), np.imag(x)), axis=1)
-    return x
-
-
-def mimo_channel_onering(Nb, Nr, Nt, Phi_R12, compl=0):
-    '''Generate [Nb] correlated MIMO channel matrices H with [Nr]x[Nt] Rayleigh Fading taps
-    According to one ring model of Massive MIMO Book
-    compl: complex or real-valued
-    rho: correlation
-    '''
-    # Channel matrix w/o correlations
-    H_w = mimo_channel(Nb, Nr, Nt, compl)
-    H = np.zeros(H_w.shape, dtype='complex128')
-    # Correlation matrix at receiver
-    # theta_ind = np.random.randint(0, Phi_R12.shape[0], (Nb, Nt))
-    # Sampling without replacement
-    theta_ind = np.array([np.random.choice(
-        range(0, Phi_R12.shape[0]), (Nt), replace=0) for _ in range(Nb)])
-    H = np.einsum('nmij,njm->nim', Phi_R12[theta_ind, :, :], H_w)
-    # for ii in range(0, Nt):
-    #      theta_ind = np.random.randint(0, Phi_R12.shape[0], Nb)
-    #      # Compute correlated channel matrix column
-    #      H[:, :, ii] = batch_dot(Phi_R12[theta_ind, :, :], H_w[:, :, ii])
-    return H
-
-
-def mimo_OneRingModel(N, angularSpread, cell_sector=360):
-    '''This is an implementation of the channel covariance matrix with the
-    one-ring model. The implementation is based on Eq. (57) in the paper:
-
-    A. Adhikary, J. Nam, J.-Y. Ahn, and G. Caire, “Joint spatial division and
-    multiplexing—the large-scale array regime,” IEEE Trans. Inf. Theory,
-    vol. 59, no. 10, pp. 6441–6463, 2013.
-
-    This is used in the article:
-
-    Emil Björnson, Jakob Hoydis, Marios Kountouris, Mérouane Debbah, “Massive
-    MIMO Systems with Non-Ideal Hardware: Energy Efficiency, Estimation, and
-    Capacity Limits,” To appear in IEEE Transactions on Information Theory.
-
-    Download article: http://arxiv.org/pdf/1307.2584
-
-    This is version 1.0 (Last edited: 2014-08-26)
-
-    License: This code is licensed under the GPLv2 license. If you in any way
-    use this code for research that results in publications, please cite our
-    original article listed above.
-
-    INPUT
-    N: Number of antennas
-    angularSpread: Angular spread around the main angle of arrival, e.g., (10, 20)
-    theta_grad: Angle of arrival (in degree)
-    cell_sector: cell sector/possible angles of arrival (in degree)
-    OUTPUT
-    R: [N]x[N] channel covariance matrix
-    R12: Square root of R
-    '''
-    # Define integrand of Eq. (57) in [42]
-    def F(alpha, D, distance, theta, Delta):
-        return np.exp(-1j * 2 * np.pi * D * distance * np.sin(alpha + theta)) / (2 * Delta)
-    # def complex_integrate(func, a, b, **kwargs):
-    #     def real_func(x):
-    #         return np.real(func(x))
-    #     def imag_func(x):
-    #         return np.imag(func(x))
-    #     real_integral = integrate.quad(real_func, a, b, **kwargs)
-    #     imag_integral = integrate.quad(imag_func, a, b, **kwargs)
-    #     return (real_integral[0] + 1j*imag_integral[0], real_integral[1:], imag_integral[1:])
-    # Approximated angular spread
-    Delta = angularSpread * np.pi / 180
-    # Half a wavelength distance
-    D = 1 / 2
-    # Angle of arrival (30 degrees)
-    # theta = theta_grad * np.pi / 180 # np.pi / 6
-    # The covariance matrix has the Toeplitz structure, so we only need to
-    # compute the first row.
-    firstRow = np.zeros((cell_sector, N), dtype='complex128')
-    R12 = np.zeros((cell_sector, N, N), dtype='complex128')
-
-    # Go through all columns in the first row
-    for theta_grad in range(-int(cell_sector / 2), int(cell_sector / 2)):
-        theta = theta_grad * np.pi / 180
-        for col in range(0, N):
-            # Distance from the first antenna
-            distance = col
-            # Compute the integral as in [42]
-            re = integrate.quad(lambda alpha: np.real(
-                F(alpha, D, distance, theta, Delta)), -Delta, Delta)[0]
-            im = integrate.quad(lambda alpha: np.imag(
-                F(alpha, D, distance, theta, Delta)), -Delta, Delta)[0]
-            firstRow[theta_grad, col] = re + 1j * im
-        R12[theta_grad, :, :] = sp.linalg.fractional_matrix_power(
-            sp.linalg.toeplitz(firstRow[theta_grad, :]), 0.5)
-    # Compute the covarince matrix by utilizing the Toeplitz structure
-    # R = sp.linalg.toeplitz(firstRow)
-    return R12
 
 
 def generate_channel(Nb, Nr, Nt, compl=0, rho=0, Phi_R12=0):
@@ -383,27 +207,18 @@ def generate_channel(Nb, Nr, Nt, compl=0, rho=0, Phi_R12=0):
     Phi_R12: correlation matrices
     '''
     if rho > 1:
-        if compl == 1:
-            H = mimo_channel_onering(
-                Nb, int(Nr / 2), int(Nt / 2), Phi_R12, compl)
-            Hr = matim2re(H, 1)
-        else:
-            Hr = mimo_channel_onering(Nb, Nr, Nt, Phi_R12, compl)
+        Hr = mymimo.generate_channel_onering(Nb, Nr, Nt, Phi_R12, compl=compl)
     else:
-        if compl == 1:
-            H = mimo_channel_corr(Nb, int(Nr / 2), int(Nt / 2), compl, rho)
-            Hr = matim2re(H, 1)
-        else:
-            Hr = mimo_channel_corr(Nb, Nr, Nt, compl, rho)
+        Hr = mymimo.generate_channel(Nb, Nr, Nt, compl=compl, rho=rho)
     return Hr
 
 
 # One Ring correlation matrices
 if rho > 1:
     if compl == 1:
-        Phi_R12 = mimo_OneRingModel(int(N / 2), rho, cell_sector)
+        Phi_R12 = mymimo.mimo_OneRingModel(N=int(N / 2), angularSpread=rho, cell_sector=cell_sector,compl=compl)
     else:
-        Phi_R12 = mimo_OneRingModel(N, rho, cell_sector)
+        Phi_R12 = mymimo.mimo_OneRingModel(N=N, angularSpread=rho, cell_sector=cell_sector,compl=compl)
 else:
     Phi_R12 = 0
 
@@ -595,14 +410,13 @@ else:
     mod = 'BPSK'
 filename = 'DetNet_' + mod + \
     '_{}_{}_{}_snr{}_{}'.format(K, N, L, ebn0db_low, ebn0db_high) + fn_ext
-ospath = ''
-path = os.path.join('curves', mod, '{}x{}'.format(K, N))
-path2 = os.path.join('models', mod, '{}x{}'.format(K, N))
-path3 = os.path.join(path2, filename)
 
+
+path_curves = os.path.join('curves', mod, '{}x{}'.format(K, N))
+path_models = os.path.join('models', mod, '{}x{}'.format(K, N), filename)
 
 # Save model for import in own script: for detailed evaluation
-pathfile = os.path.join(ospath, path3, filename)  # + '.ckpt'
+pathfile = os.path.join(save_dir, path_models, filename)  # + '.ckpt'
 check_path(pathfile, verbose=1)
 
 
@@ -687,7 +501,7 @@ print(avg_val_error_last_layer)
 
 # Last save for quick evaluation
 EbN0 = snrdb_list - snr_shift
-pathfile = os.path.join(ospath, path, 'BER_' + filename + '.npz')
+pathfile = os.path.join(save_dir, path_curves, 'BER_' + filename + '.npz')
 check_path(pathfile, verbose=0)
 np.savez(pathfile, ebn0=EbN0, ber=bers[0, :])
 

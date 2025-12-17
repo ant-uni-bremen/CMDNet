@@ -34,8 +34,8 @@ import utilities.my_equalizer as equ
 import utilities.my_functions as mf
 import utilities.my_math_operations as mop
 import utilities.my_mimo_channel as mch
-import utilities.my_training as mt
-
+import utilities.my_training_tf1 as mt
+import cmdnet_extensions as cmd_extensions
 
 # Functions exclusive to this file
 
@@ -739,8 +739,8 @@ if __name__ == '__main__':
     os.chdir(path0)
 
     # Load settings
-    # sim_settings.yaml, sim_settings_llr.yaml, sim_settings_online.yaml, sim_settings_code.yaml
-    settings_file = "sim_settings.yaml"
+    # sim_settings.yaml, sim_settings_default.yaml, sim_settings_code.yaml, sim_settings_llr.yaml, sim_settings_online.yaml, sim_settings_onlineDNN.yaml, sim_settings_deeq.yaml
+    settings_file = "sim_settings_llr.yaml"
 
     with open(settings_file, 'r', encoding='UTF8') as stream:
         set_dict = yaml.safe_load(stream)
@@ -863,10 +863,10 @@ if __name__ == '__main__':
 
         # Create graph
         if sim_set['algo'] == 'HyperCMD':
-            CMDgraph = mt.HyperCMDGraph(train_params, delta0, taui0, soft=train_set['soft'],
+            CMDgraph = cmd_extensions.HyperCMDGraph(train_params, delta0, taui0, soft=train_set['soft'],
                                         multiloss=train_set['multiloss'], binopt=sim_set['binopt'])
         elif sim_set['algo'] == 'CMDpar':
-            CMDgraph = mt.CMDparGraph(train_params, delta0, taui0, soft=train_set['soft'],
+            CMDgraph = cmd_extensions.CMDparGraph(train_params, delta0, taui0, soft=train_set['soft'],
                                       multiloss=train_set['multiloss'], binopt=sim_set['binopt'])
         else:
             CMDgraph = CMDGraph(train_params, delta0, taui0, soft=train_set['soft'],
