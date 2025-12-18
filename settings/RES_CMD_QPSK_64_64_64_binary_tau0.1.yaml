@@ -9,7 +9,7 @@ load_set:
   fn_train: trainhist_
   gpu: 1
   prec: float64
-  sim: 0
+  sim: 2
   sv_ext: npz
   train: 1
 sim_set:
@@ -35,12 +35,23 @@ sim_set:
 train_set:
   Nepoch: 0
   batch_size: 500
+  dnndepth: 2
+  dnnverbose: 2
+  dnnwidth: 512
   ebn0_range:
   - 4
-  - 11
+  - 27
   esteps: 0
   it_checkp: 100
-  lr_dyn: 0
+  lr_dyn:
+    boundaries:
+    - 1000
+    - 3000
+    mode: 0
+    values:
+    - 0.001
+    - 0.0001
+    - 1.0e-05
   multiloss: 0
   online: 0
   opt: adam

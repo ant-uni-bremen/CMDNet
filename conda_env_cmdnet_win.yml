@@ -1,4 +1,4 @@
-name: ml1_win
+name: ml
 channels:
   - defaults
   - conda-forge
@@ -14,7 +14,7 @@ dependencies:
   - blas=1.0=mkl
   - blinker=1.4=py37haa95532_0
   - brotlipy=0.7.0=py37h2bbff1b_1003
-  - ca-certificates=2023.08.22=haa95532_0
+  - ca-certificates=2025.12.2=haa95532_0
   - cachetools=4.2.1=pyhd3eb1b0_0
   - certifi=2022.12.7=py37haa95532_0
   - cffi=1.14.5=py37hcd4344a_0
@@ -89,6 +89,7 @@ dependencies:
   - pip=21.0.1=py37haa95532_0
   - prompt-toolkit=3.0.17=pyh06a4308_0
   - protobuf=3.14.0=py37hd77b12b_1
+  - psutil=5.9.0=py37h2bbff1b_0
   - pyasn1=0.4.8=py_0
   - pyasn1-modules=0.2.8=py_0
   - pycodestyle=2.10.0=py37haa95532_0
@@ -147,3 +148,4 @@ dependencies:
   - zipp=3.4.1=pyhd3eb1b0_0
   - zlib=1.2.11=h62dcd97_4
   - zstd=1.4.5=h04227a9_0
+prefix: C:\Users\Eddy\miniconda3\envs\ml

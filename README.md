@@ -17,18 +17,22 @@ The original code was downloaded, modified and resimulated for comparison to CMD
 ## Publications
 1. Edgar Beck, Carsten Bockelmann, and Armin Dekorsy, “CMDNet: Learning a Probabilistic Relaxation of Discrete Variables for Soft Detection With Low Complexity,” IEEE Trans. Commun., vol. 69, no. 12, pp. 8214–8227, Dec. 2021. https://doi.org/10.1109/TCOMM.2021.3114682
 2. Edgar Beck, Carsten Bockelmann, and Armin Dekorsy, “Concrete MAP Detection: A Machine Learning Inspired Relaxation,” in 24th International ITG Workshop on Smart Antennas (WSA 2020), vol. 24, Hamburg, Germany, Feb. 2020, pp. 1–5.
+3. Matthias Hummert, Dirk Wübben, and Armin Dekorsy, “DeEQ: Deep equalization for large MIMO systems,” in 24th International ITG Workshop on Smart Antennas (WSA 2020), vol. 24, Hamburg, Germany, Feb. 2020, pp. 1–6.
 
 # Requirements & Usage
 
-This code was written for `TensorFlow 1.15` and the dependencies can be found in the Conda environment `ml.yml`.
+This code was written for `TensorFlow 1.15` and the dependencies can be found in the Conda environment `conda_env_cmdnet.yml` (see `conda_env_cmdnet_win.yml` for Windows).
 
 Run the script as `python3 cmdnet_mimo_detection.py`, to reproduce the results of the articles. To do so, set the parameters in the file `sim_settings.yaml` to the values in the articles.
 
-There are four template setting files:
+There are 5 template setting files:
 1. Default training
-2. Joint decoding
+2. Joint soft detection + decoding
 3. LLR (Log-Likelihood Ratio) plot
-4. Online learning
+4. Online learning CMDNet
+5. Online learning DNN
+6. DeEQ MIMO settings for comparison to [3]
+
 
 # Acknowledgements
 

@@ -8,7 +8,7 @@ load_set:
   fn_sim: RES_
   fn_train: trainhist_
   gpu: 1
-  prec: float32
+  prec: float64
   sim: 0
   sv_ext: npz
   train: 1
