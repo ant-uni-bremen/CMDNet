@@ -1,0 +1,2 @@
+model_checkpoint_path: "./MMNet_QPSK_64_128_64_snr4_27_OneRing20"
+all_model_checkpoint_paths: "./MMNet_QPSK_64_128_64_snr4_27_OneRing20"

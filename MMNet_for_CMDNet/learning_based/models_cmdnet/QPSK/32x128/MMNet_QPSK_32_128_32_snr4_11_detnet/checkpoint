@@ -1,0 +1,2 @@
+model_checkpoint_path: "./MMNet_QPSK_32_128_32_snr4_11_detnet"
+all_model_checkpoint_paths: "./MMNet_QPSK_32_128_32_snr4_11_detnet"

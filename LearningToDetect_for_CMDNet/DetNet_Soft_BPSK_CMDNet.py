@@ -88,12 +88,12 @@ no_gpu = 0                  # if without gpu
 compl = 1                   # 1
 rho = 0                     # 0, 10, 20
 cell_sector = 120           # 120
-it_print = 1                # 100
+it_print = 100              # 100
 fn_ext = '_test'            # _rxrho07, _OneRing20, _OneRing10_120
+save_dir = ''
 # Save in CMDNet root folder
-# save_dir = ''
-save_dir = os.path.join(os.path.dirname(__file__), '..')
-save_dir = os.path.abspath(save_dir)
+# save_dir = os.path.join(os.path.dirname(__file__), '..')
+# save_dir = os.path.abspath(save_dir)
 if no_gpu == 1:
     num_GPU = 0
     num_cores = 8
@@ -413,7 +413,7 @@ filename = 'DetNet_' + mod + \
 
 
 path_curves = os.path.join('curves', mod, '{}x{}'.format(K, N))
-path_models = os.path.join('models', mod, '{}x{}'.format(K, N), filename)
+path_models = os.path.join('models_cmdnet', mod, '{}x{}'.format(K, N), filename)
 
 # Save model for import in own script: for detailed evaluation
 pathfile = os.path.join(save_dir, path_models, filename)  # + '.ckpt'

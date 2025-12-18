@@ -144,12 +144,12 @@ no_gpu = 0                  # if without gpu
 compl = 1                   # 1
 rho = 0                     # 0, 10, 20
 cell_sector = 120           # 120
-it_print = 1                # 100
-fn_ext = '_snr_7_30_test'
+it_print = 100              # 100
+fn_ext = '_snr_7_30_test'   # '_snr_7_30'
+save_dir = ''
 # Save in CMDNet root folder
-# save_dir = ''
-save_dir = os.path.join(os.path.dirname(__file__), '..')
-save_dir = os.path.abspath(save_dir)
+# save_dir = os.path.join(os.path.dirname(__file__), '..')
+# save_dir = os.path.abspath(save_dir)
 if no_gpu == 1:
     num_GPU = 0
     num_cores = 8
@@ -629,9 +629,8 @@ mod = 'QAM16'
 filename = 'DetNet_' + mod + \
     '_{}_{}_{}_snr{}_{}'.format(K2, N2, L, ebn0db_low, ebn0db_high) + fn_ext
 
-
 path_curves = os.path.join('curves', mod, '{}x{}'.format(K, N))
-path_models = os.path.join('models', mod, '{}x{}'.format(K, N), filename)
+path_models = os.path.join('models_cmdnet', mod, '{}x{}'.format(K, N), filename)
 
 # Save model for import in own script: for detailed evaluation
 pathfile = os.path.join(save_dir, path_models, filename)  # + '.ckpt'

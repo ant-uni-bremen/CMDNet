@@ -456,7 +456,7 @@ class DetNetGraph():
         '''
         filename = 'DetNet_' + train_par.mod.mod_name + '_{}_{}_{}_snr{}_{}'.format(
             train_par.Nt, train_par.Nr, train_par.L, train_par.EbN0_range[0], train_par.EbN0_range[1]) + fn_ext
-        path = os.path.join('models', train_par.mod.mod_name,
+        path = os.path.join('LearningToDetect_for_CMDNet', 'models_cmdnet', train_par.mod.mod_name,
                             '{}x{}'.format(train_par.Nt, train_par.Nr))
         path2 = os.path.join(path, filename)
         pathfile = os.path.join(path2, filename)
@@ -553,7 +553,7 @@ class MMNetGraph():
         '''
         filename = algo + '_' + train_par.mod.mod_name + '_{}_{}_{}_snr{}_{}'.format(
             train_par.Nt, train_par.Nr, train_par.L, train_par.EbN0_range[0], train_par.EbN0_range[1]) + fn_ext
-        path = os.path.join('models', train_par.mod.mod_name,
+        path = os.path.join('MMNet_for_CMDNet', 'learning_based', 'models_cmdnet', train_par.mod.mod_name,
                             '{}x{}'.format(train_par.Nt, train_par.Nr))
         path2 = os.path.join(path, filename)
         pathfile = os.path.join(path2, filename)

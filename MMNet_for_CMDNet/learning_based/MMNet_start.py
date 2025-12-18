@@ -65,10 +65,10 @@ if __name__ == '__main__':
     cell_sector = 120               # 120
     fn_ext = '_test'                # '_OneRing10_120_snr4_27'
 
+    save_dir = ''
     # Save in CMDNet root folder
-    # save_dir = ''
-    save_dir = os.path.join(os.path.dirname(__file__), '..', '..')
-    save_dir = os.path.abspath(save_dir)
+    # save_dir = os.path.join(os.path.dirname(__file__), '..', '..')
+    # save_dir = os.path.abspath(save_dir)
 
     cmd_str = 'offlineTraining_CMDNet.py --x-size {} --y-size {} --snr-min {} --snr-max {} --layers {} -lr {} --batch-size {} --train-iterations {} --mod {}  --test-batch-size {} --linear {}  --denoiser {}  --test-every {} --gpu {} --complex {} --angularspread {} --cellsector {} --filename_extension {} --save_directory {}'.format(
         Nt, Nr, snr_min, snr_max, L, lr, batch_size, train_it, mod, test_batch_size, linear, denoiser, test_iteration_print, gpu_selected, complex_system, angularspread, cell_sector, fn_ext, save_dir)

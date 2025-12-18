@@ -32,37 +32,6 @@ By Neev Samuel neev(dot)samuel(at)gmail(dot)com
 """
 
 
-sess = tf.InteractiveSession()
-
-
-# parameters
-K = 60                                  # 20 Nt * 2
-N = 60                                  # 30 Nr * 2
-snrdb_low = 7  # 7
-snrdb_high = 14  # 14 | 35
-snr_low = 10.0 ** (snrdb_low/10.0)
-snr_high = 10.0 ** (snrdb_high/10.0)
-L = 3 * K                               # 90 (Default) #3 * K (VCDN) / K (ShVCDN) (Paper)
-v_size = 2 * K
-hl_size = 8 * K
-startingLearningRate = 0.0001
-decay_factor = 0.97
-decay_step_size = 1000
-train_iter = 10                         # 20000
-train_batch_size = 5000                 # 5000
-test_iter = 200
-test_batch_size = 1000
-LOG_LOSS = 1
-res_alpha = 0.9
-num_snr = 18
-snrdb_low_test = 4.0
-snrdb_high_test = 21.0                  # SNR
-# Own parameters
-it_print = 1                            # 100
-it_checkpoint = 1000                    # 1000
-fn_ext = '_test'                        # ''
-
-
 """Data generation for train and test phases
 In this example, both functions are the same.
 This duplication is in order to easily allow testing cases where the test is over different distributions of data than in the training phase.
@@ -159,119 +128,163 @@ def sign_layer(x, input_size, output_size, Layer_num):
     return y
 
 
-# tensorflow placeholders, the input given to the model in order to train and test the network
-HY = tf.placeholder(tf.float32, shape=[None, K], name="HYt")
-X = tf.placeholder(tf.float32, shape=[None, K], name="Xt")
-HH = tf.placeholder(tf.float32, shape=[None, K, K], name="HHt")
-# HHinv = tf.placeholder(tf.float32,shape=[None, K , K])
+if __name__ == '__main__':
+    #     my_func_main()
+    # def my_func_main():
 
-batch_size = tf.shape(HY)[0]
-# X_LS = tf.matmul(tf.expand_dims(HY,1),tf.linalg.inv(HH))
-# X_LS = tf.matmul(tf.expand_dims(HY,1),HHinv)
-# X_LS= tf.squeeze(X_LS,1)
-# loss_LS = tf.reduce_mean(tf.square(X - X_LS))
-# ber_LS = tf.reduce_mean(tf.cast(tf.not_equal(X,tf.sign(X_LS)), tf.float32))
+    sess = tf.InteractiveSession()
 
+    # parameters
+    K = 60                                  # 20 Nt * 2
+    N = 60                                  # 30 Nr * 2
+    ebn0db_low = 4                          # 4, default: 4
+    ebn0db_high = 11                        # 27, default: 11
+    snr_shift = 10 * np.log10(2)
+    snrdb_low = ebn0db_low + snr_shift      # default: 4.0
+    snrdb_high = ebn0db_high + snr_shift    # default: 21.0
+    # snrdb_low = 7  # 7
+    # snrdb_high = 14  # 14 | 35
+    snr_low = 10.0 ** (snrdb_low/10.0)
+    snr_high = 10.0 ** (snrdb_high/10.0)
+    # 90 (Default) #3 * K (VCDN) / K (ShVCDN) (Paper)
+    L = 3 * K
+    v_size = 2 * K
+    hl_size = 8 * K
+    startingLearningRate = 0.0001
+    decay_factor = 0.97
+    decay_step_size = 1000
+    train_iter = 10                         # 20000
+    train_batch_size = 5000                 # 5000
+    test_iter = 1                           # 200
+    test_batch_size = 1000
+    LOG_LOSS = 1
+    res_alpha = 0.9
+    num_snr = 18
+    snrdb_low_test = 4.0
+    snrdb_high_test = 21.0                  # SNR
+    # Own parameters
+    it_print = 1                            # 100
+    it_checkpoint = 1000                    # 1000
+    fn_ext = '_test'                        # ''
 
-S = []
-S.append(tf.zeros([batch_size, K]))
-V = []
-V.append(tf.zeros([batch_size, v_size]))
-LOSS = []
-LOSS.append(tf.zeros([], name="LOSSt"))
-BER = []
-BER.append(tf.zeros([], name="BERt"))
-
-# The architecture of DetNet
-for i in range(1, L):
-    temp1 = tf.matmul(tf.expand_dims(S[-1], 1), HH)
-    temp1 = tf.squeeze(temp1, 1)
-    Z = tf.concat([HY, S[-1], temp1, V[-1]], 1)
-    ZZ = relu_layer(Z, 3*K + v_size, hl_size, 'relu'+str(i))
-    S.append(sign_layer(ZZ, hl_size, K, 'sign'+str(i)))
-    S[i] = (1-res_alpha)*S[i]+res_alpha*S[i-1]
-    V.append(affine_layer(ZZ, hl_size, v_size, 'aff'+str(i)))
-    V[i] = (1-res_alpha)*V[i]+res_alpha*V[i-1]
-    if LOG_LOSS == 1:
-        LOSS.append(tf.reduce_mean(
-            np.log(i) * tf.reduce_mean(tf.square(X - S[-1]), 1), name="LOSSt"))
+    if K % 2 == 0 and N % 2 == 0:
+        # NOTE: That is how the script decides between complex and real-valued system model...
+        compl = 1
     else:
-        LOSS.append(tf.reduce_mean(tf.reduce_mean(tf.square(X - S[-1]), 1)))
-    BER.append(tf.reduce_mean(tf.cast(tf.not_equal(
-        X, tf.sign(S[-1])), tf.float32), name="BERt"))
+        compl = 0
+    if compl == 1:
+        mod = 'QPSK'
+    else:
+        mod = 'BPSK'
+    filename = 'DetNetv1_' + mod + \
+        '_{}_{}_{}_snr{}_{}'.format(K, N, L, ebn0db_low, ebn0db_high) + fn_ext
+    pathfile = os.path.join('models_cmdnet', filename, filename)
 
-TOTAL_LOSS = tf.add_n(LOSS, name="TOTAL_LOSSt")
+    # tensorflow placeholders, the input given to the model in order to train and test the network
+    HY = tf.placeholder(tf.float32, shape=[None, K], name="HYt")
+    X = tf.placeholder(tf.float32, shape=[None, K], name="Xt")
+    HH = tf.placeholder(tf.float32, shape=[None, K, K], name="HHt")
+    # HHinv = tf.placeholder(tf.float32,shape=[None, K , K])
 
+    batch_size = tf.shape(HY)[0]
+    # X_LS = tf.matmul(tf.expand_dims(HY,1),tf.linalg.inv(HH))
+    # X_LS = tf.matmul(tf.expand_dims(HY,1),HHinv)
+    # X_LS= tf.squeeze(X_LS,1)
+    # loss_LS = tf.reduce_mean(tf.square(X - X_LS))
+    # ber_LS = tf.reduce_mean(tf.cast(tf.not_equal(X,tf.sign(X_LS)), tf.float32))
 
-global_step = tf.Variable(0, trainable=False)
-learning_rate = tf.train.exponential_decay(
-    startingLearningRate, global_step, decay_step_size, decay_factor, staircase=True)
-train_step = tf.train.AdamOptimizer(learning_rate).minimize(TOTAL_LOSS)
-tf.add_to_collection("train_step", train_step)
-init_op = tf.initialize_all_variables()
+    S = []
+    S.append(tf.zeros([batch_size, K]))
+    V = []
+    V.append(tf.zeros([batch_size, v_size]))
+    LOSS = []
+    LOSS.append(tf.zeros([], name="LOSSt"))
+    BER = []
+    BER.append(tf.zeros([], name="BERt"))
 
-sess.run(init_op)
-# Training DetNet
-# Save graph while Training
-pathfile = 'models/detnet_{}_{}_{}_snr{}_{}{}/'.format(
-    int(K/2), int(N/2), L, snrdb_low, snrdb_high, fn_ext)
-saver = tf.train.Saver()
-for i in range(train_iter):  # num of train iter
-    batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_train(
-        train_batch_size, K, N, snr_low, snr_high)
-    train_step.run(feed_dict={HY: batch_HY, HH: batch_HH, X: batch_X})
-    if i % it_checkpoint == 0:
-        saver.save(sess, pathfile +
-                   'detnet_{}_{}_{}'.format(int(K/2), int(N/2), L), global_step=i)
-    if i % it_print == 0:
-        batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_iid_test(
+    # The architecture of DetNet
+    for i in range(1, L):
+        temp1 = tf.matmul(tf.expand_dims(S[-1], 1), HH)
+        temp1 = tf.squeeze(temp1, 1)
+        Z = tf.concat([HY, S[-1], temp1, V[-1]], 1)
+        ZZ = relu_layer(Z, 3*K + v_size, hl_size, 'relu'+str(i))
+        S.append(sign_layer(ZZ, hl_size, K, 'sign'+str(i)))
+        S[i] = (1-res_alpha)*S[i]+res_alpha*S[i-1]
+        V.append(affine_layer(ZZ, hl_size, v_size, 'aff'+str(i)))
+        V[i] = (1-res_alpha)*V[i]+res_alpha*V[i-1]
+        if LOG_LOSS == 1:
+            LOSS.append(tf.reduce_mean(
+                np.log(i) * tf.reduce_mean(tf.square(X - S[-1]), 1), name="LOSSt"))
+        else:
+            LOSS.append(tf.reduce_mean(
+                tf.reduce_mean(tf.square(X - S[-1]), 1)))
+        BER.append(tf.reduce_mean(tf.cast(tf.not_equal(
+            X, tf.sign(S[-1])), tf.float32), name="BERt"))
+
+    TOTAL_LOSS = tf.add_n(LOSS, name="TOTAL_LOSSt")
+
+    global_step = tf.Variable(0, trainable=False)
+    learning_rate = tf.train.exponential_decay(
+        startingLearningRate, global_step, decay_step_size, decay_factor, staircase=True)
+    train_step = tf.train.AdamOptimizer(learning_rate).minimize(TOTAL_LOSS)
+    tf.add_to_collection("train_step", train_step)
+    init_op = tf.initialize_all_variables()
+
+    sess.run(init_op)
+    # Training DetNet
+    # Save graph while Training
+    saver = tf.train.Saver()
+    for i in range(train_iter):  # num of train iter
+        batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_train(
             train_batch_size, K, N, snr_low, snr_high)
-        results = sess.run([LOSS[-1], BER[-1]],
-                           {HY: batch_HY, HH: batch_HH, X: batch_X})
-        print_string = [i]+results
-        print(' '.join(f'{x}' for x in print_string))
-saver.save(sess, pathfile+'detnet_{}_{}_{}'.format(int(K/2), int(N/2), L), global_step=i+1)
+        train_step.run(feed_dict={HY: batch_HY, HH: batch_HH, X: batch_X})
+        if i % it_checkpoint == 0:
+            saver.save(sess, pathfile, global_step=i)
+        if i % it_print == 0:
+            batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_iid_test(
+                train_batch_size, K, N, snr_low, snr_high)
+            results = sess.run([LOSS[-1], BER[-1]],
+                               {HY: batch_HY, HH: batch_HH, X: batch_X})
+            print_string = [i]+results
+            print(' '.join(f'{x}' for x in print_string))
+    saver.save(sess, pathfile, global_step=i+1)
 
+    # Testing the trained model
+    snrdb_list = np.linspace(snrdb_low_test, snrdb_high_test, num_snr)
+    snr_list = 10.0 ** (snrdb_list/10.0)
+    bers = np.zeros((1, num_snr))
+    times = np.zeros((1, num_snr))
+    tmp_bers = np.zeros((1, test_iter))
+    tmp_times = np.zeros((1, test_iter))
+    for j in range(num_snr):
+        for jj in range(test_iter):
+            print('snr:')
+            print(snrdb_list[j])
+            print('test iteration:')
+            print(jj)
+            batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_iid_test(
+                test_batch_size, K, N, snr_list[j], snr_list[j])
+            tic = tm.time()
+            tmp_bers[:, jj] = np.array(
+                sess.run(BER[-1], {HY: batch_HY, HH: batch_HH, X: batch_X}))
+            toc = tm.time()
+            tmp_times[0][jj] = toc - tic
+        bers[0][j] = np.mean(tmp_bers, 1)
+        times[0][j] = np.mean(tmp_times[0])/test_batch_size
 
-# Testing the trained model
-snrdb_list = np.linspace(snrdb_low_test, snrdb_high_test, num_snr)
-snr_list = 10.0 ** (snrdb_list/10.0)
-bers = np.zeros((1, num_snr))
-times = np.zeros((1, num_snr))
-tmp_bers = np.zeros((1, test_iter))
-tmp_times = np.zeros((1, test_iter))
-for j in range(num_snr):
-    for jj in range(test_iter):
-        print('snr:')
-        print(snrdb_list[j])
-        print('test iteration:')
-        print(jj)
-        batch_Y, batch_H, batch_HY, batch_HH, batch_X, SNR1 = generate_data_iid_test(
-            test_batch_size, K, N, snr_list[j], snr_list[j])
-        tic = tm.time()
-        tmp_bers[:, jj] = np.array(
-            sess.run(BER[-1], {HY: batch_HY, HH: batch_HH, X: batch_X}))
-        toc = tm.time()
-        tmp_times[0][jj] = toc - tic
-    bers[0][j] = np.mean(tmp_bers, 1)
-    times[0][j] = np.mean(tmp_times[0])/test_batch_size
+    print('snrdb_list')
+    print(snrdb_list)
+    print('bers')
+    print(bers)
+    print('times')
+    print(times)
 
-print('snrdb_list')
-print(snrdb_list)
-print('bers')
-print(bers)
-print('times')
-print(times)
+    # Save simulation results into file
+    EbN0 = snrdb_list - 10 * np.log10(2)
+    pathfile = os.path.join('simulation_results', 'BER_' + filename)
+    if os.path.isfile(pathfile):
+        os.remove(pathfile)
+    np.savez(pathfile, ebn0=EbN0, ber=bers)
 
-
-# Save simulation results into file
-EbN0 = snrdb_list - 10 * np.log10(2)
-pathfile = os.path.join('simulation_results', 'BER_DETNET_{}_{}_{}_snr{}_{}{}.npz'.format(
-    int(K/2), int(N/2), L, snrdb_low, snrdb_high, fn_ext))
-if os.path.isfile(pathfile):
-    os.remove(pathfile)
-np.savez(pathfile, ebn0=EbN0, ber=bers)
-
-
-# Close session to free memory -> not necessary...
-# sess.close()
+    # Close session to free memory -> not necessary...
+    # sess.close()

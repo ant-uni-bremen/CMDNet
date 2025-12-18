@@ -1,0 +1,2 @@
+model_checkpoint_path: "./MMNet_QPSK_64_64_64_snr24_47_rho07_snr24_47"
+all_model_checkpoint_paths: "./MMNet_QPSK_64_64_64_snr24_47_rho07_snr24_47"

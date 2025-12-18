@@ -1,0 +1,2 @@
+model_checkpoint_path: "./MMNet_QAM16_16_16_16_snr4_27_test"
+all_model_checkpoint_paths: "./MMNet_QAM16_16_16_16_snr4_27_test"

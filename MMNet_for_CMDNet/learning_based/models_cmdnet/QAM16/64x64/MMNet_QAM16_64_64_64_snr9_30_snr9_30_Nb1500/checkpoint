@@ -1,0 +1,2 @@
+model_checkpoint_path: "./MMNet_QAM16_64_64_64_snr9_30_snr9_30_Nb1500"
+all_model_checkpoint_paths: "./MMNet_QAM16_64_64_64_snr9_30_snr9_30_Nb1500"
