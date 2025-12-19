@@ -13,7 +13,6 @@ from tensorflow.keras import backend as KB
 from my_functions import print_time
 
 
-
 # ------ Training functions - Tensorflow 1 (CMDNet Research) ---------------------
 
 
@@ -289,31 +288,5 @@ def dataset_split(datasets, validation_split):
         datasets_test = []
     return datasets_train, datasets_test
 
-
-def test_get_batches():
-    '''Test get_batch functions
-    '''
-    import semantic_communication.datasets as datasets
-    train_input, train_labels, _, _ = datasets.load_dataset('mnist')
-    train_input, _ = datasets.preprocess_pixels(train_input, [])
-    training_batch_size = 500
-    epoch = 0
-    epochs = 3
-    number_batches = len(train_input[0]) // training_batch_size
-    number_image_inputs = len(train_input)
-    for epoch in range(epochs):
-        batch_number = 0
-        train_input, train_labels = shuffle_dataset(
-            train_input, train_labels)
-        if not dimensions_same:
-            break
-        for batch_x, _ in get_batch_dataset(train_input, train_labels, training_batch_size):
-            print_str = f'[Rx] Epoch: {epoch + 1}/{epochs}, Batch: {batch_number + 1}/{number_batches}'
-            print(print_str)
-            batch_number = batch_number + 1
-            dimensions_same = len(batch_x) == number_image_inputs
-            if not dimensions_same:
-                break
-    return dimensions_same
 
 # EOF
