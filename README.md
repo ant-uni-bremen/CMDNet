@@ -1,11 +1,11 @@
 # CMDNet: Concrete MAP Detection Network
-[![DOI](https://zenodo.org/badge/696866184.svg)](https://zenodo.org/badge/latestdoi/696866184)
+[![DOI](https://zenodo.org/badge/696866184.svg)](https://doi.org/10.5281/zenodo.8416507)
 
 Original CMDNet implementation for Soft MIMO Detection in TensorFlow 1. Furthermore, competitive MIMO detectors were implemented in TensorFlow 1 and NumPy. It is the source code from the scientific research articles [1, 2].
 
 ## Related Repositories
 
-- [`CMDNet_Sionna_tf2`](https://github.com/ant-uni-bremen/CMDNet_Sionna_tf2): A new version was adapted for TensorFlow 2 and Sionna 0.9.0 including joint soft detection and decoding, being able to reproduce the tf1 simulations.
+- [`cmdnet-sionna-tf2`](https://github.com/ant-uni-bremen/cmdnet-sionna-tf2): A new version was adapted for TensorFlow 2 and Sionna 0.9.0 including joint soft detection and decoding, being able to reproduce the tf1 simulations.
 
 We created 3 forks to compare to the following original implementations: 
 - [`MMNet_for_CMDNet`](https://github.com/ant-uni-bremen/MMNet_for_CMDNet)
@@ -31,7 +31,7 @@ There are 5 template setting files:
 3. LLR (Log-Likelihood Ratio) plot
 4. Online learning CMDNet
 5. Online learning DNN
-6. DeEQ MIMO settings for comparison to [3]
+6. DeEQ MIMO settings for comparison to [2, 3]
 
 
 # Acknowledgements
@@ -47,3 +47,5 @@ This program is licensed under the GPLv3 license. If you in any way use this cod
 1. Following the great success of Machine Learning (ML), especially Deep Neural Networks (DNNs), in many research domains in 2010s, several ML-based approaches were proposed for detection in large inverse linear problems, e.g., massive MIMO systems. The main motivation behind is that the complexity of Maximum A-Posteriori (MAP) detection grows exponentially with system dimensions. Instead of using DNNs, essentially being a black-box, we take a slightly different approach and introduce a probabilistic Continuous relaxation of disCrete variables to MAP detection. Enabling close approximation and continuous optimization, we derive an iterative detection algorithm: Concrete MAP Detection (CMD). Furthermore, extending CMD by the idea of deep unfolding into CMDNet, we allow for (online) optimization of a small number of parameters to different working points while limiting complexity. In contrast to recent DNN-based approaches, we select the optimization criterion and output of CMDNet based on information theory and are thus able to learn approximate probabilities of the individual optimal detector. This is crucial for soft decoding in today’s communication systems. Numerical simulation results in MIMO systems reveal CMDNet to feature a promising accuracy complexity trade-off compared to State of the Art. Notably, we demonstrate CMDNet’s soft outputs to be reliable for decoders.
 
 2. Motivated by large linear inverse problems where the complexity of the Maximum A-Posteriori (MAP) detector grows exponentially with system dimensions, e.g., large MIMO, we introduce a method to relax a discrete MAP problem into a continuous one. The relaxation is inspired by recent ML research and offers many favorable properties reflecting its quality. Hereby, we derive an iterative detection algorithm based on gradient descent optimization: Concrete MAP Detection (CMD). We show numerical results of application in large MIMO systems that demonstrate superior performance w.r.t. all considered State of the Art approaches.
+
+3. Multiple Input Multiple Output (MIMO) and massive MIMO (mMIMO) are key-enabling technologies for 4G and 5G communications systems. mMIMO uses a high number of antennas, where the number of antennas at the base station exceeds in general the number of antennas in the mobiles. For uncorrelated channels, linear equalizers already achieve promising performance in the uplink due to the channel hardening effect. In contrast, we will focus on large symmetrical MIMO systems in this paper, where many antennas are employed at the transmitter and the receiver side resulting in a more challenging task for the receiver. Traditionally, receiver algorithms have been derived based on models for the communications system. Recently, machine learning approaches have been proposed where the design is data driven. In order to overcome the drawbacks of model-based and pure data driven approaches, hybrid approaches combining the benefits of both worlds have emerged. In this paper, we present the novel hybrid approach entitled Deep Equalization (DeEQ) based on model knowledge and a neural network like structure. As demonstrated by simulation results, this novel approach achieves very good performance with the advantage of only a very low error floor.
