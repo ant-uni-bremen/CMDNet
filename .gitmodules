@@ -1,3 +1,6 @@
 [submodule "utilities"]
 	path = utilities
 	url = git@github.com:ant-uni-bremen/comms-core.git
+[submodule "MMNet_for_CMDNet"]
+	path = MMNet_for_CMDNet
+	url = https://github.com/ant-uni-bremen/MMNet_for_CMDNet.git
