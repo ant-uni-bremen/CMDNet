@@ -4,3 +4,6 @@
 [submodule "MMNet_for_CMDNet"]
 	path = MMNet_for_CMDNet
 	url = https://github.com/ant-uni-bremen/MMNet_for_CMDNet.git
+[submodule "LearningToDetect_for_CMDNet"]
+	path = LearningToDetect_for_CMDNet
+	url = https://github.com/ant-uni-bremen/LearningToDetect_for_CMDNet.git
