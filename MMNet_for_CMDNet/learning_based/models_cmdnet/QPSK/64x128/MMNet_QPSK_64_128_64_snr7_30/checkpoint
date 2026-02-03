@@ -1,2 +1,0 @@
-model_checkpoint_path: "./MMNet_QPSK_64_128_64_snr7_30"
-all_model_checkpoint_paths: "./MMNet_QPSK_64_128_64_snr7_30"

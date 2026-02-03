@@ -1,2 +1,0 @@
-model_checkpoint_path: "16QAM_Soft_model.ckpt"
-all_model_checkpoint_paths: "16QAM_Soft_model.ckpt"

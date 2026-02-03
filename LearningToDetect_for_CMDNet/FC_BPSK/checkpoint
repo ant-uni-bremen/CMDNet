@@ -1,2 +1,0 @@
-model_checkpoint_path: "FC_BPSK_model.ckpt"
-all_model_checkpoint_paths: "FC_BPSK_model.ckpt"
