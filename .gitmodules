@@ -7,3 +7,6 @@
 [submodule "LearningToDetect_for_CMDNet"]
 	path = LearningToDetect_for_CMDNet
 	url = https://github.com/ant-uni-bremen/LearningToDetect_for_CMDNet.git
+[submodule "DeepMIMODetection_for_CMDNet"]
+	path = DeepMIMODetection_for_CMDNet
+	url = https://github.com/ant-uni-bremen/DeepMIMODetection_for_CMDNet.git
