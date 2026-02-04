@@ -15,7 +15,7 @@ We created 3 forks to compare to the following original implementations that are
 The original code was downloaded, modified and resimulated for comparison to CMDNet enabling high reproducibility of publications [1, 2, 3]. In all 3 forks, we first simulate the original code and then save the graph including its weights such that it can be loaded into the CMDNet script for evaluation.
 
 ## Publications
-1. Edgar Beck, Advancing Semantic and Digital Communications through Machine Learning, ser. Dissertations from the Department of Communications Engineering, University of Bremen. Düren: Shaker Verlag, Dec. 2025, vol. 15. https://doi.org/10.26092/elib/4791
+1. Edgar Beck, Advancing Semantic and Digital Communications through Machine Learning, ser. Dissertations from the Department of Communications Engineering, University of Bremen, A. Dekorsy, Ed. Düren: Shaker Verlag, Dec. 2025, vol. 15. https://doi.org/10.26092/elib/4791
 2. Edgar Beck, Carsten Bockelmann, and Armin Dekorsy, “CMDNet: Learning a Probabilistic Relaxation of Discrete Variables for Soft Detection With Low Complexity,” IEEE Trans. Commun., vol. 69, no. 12, pp. 8214–8227, Dec. 2021. https://doi.org/10.1109/TCOMM.2021.3114682
 3. Edgar Beck, Carsten Bockelmann, and Armin Dekorsy, “Concrete MAP Detection: A Machine Learning Inspired Relaxation,” in 24th International ITG Workshop on Smart Antennas (WSA 2020), vol. 24, Hamburg, Germany, Feb. 2020, pp. 1–5.
 4. Matthias Hummert, Dirk Wübben, and Armin Dekorsy, “DeEQ: Deep equalization for large MIMO systems,” in 24th International ITG Workshop on Smart Antennas (WSA 2020), vol. 24, Hamburg, Germany, Feb. 2020, pp. 1–6.
