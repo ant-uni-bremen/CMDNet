@@ -8,7 +8,7 @@ Created on Wed May 13 14:31:11 2020
 # Own packages
 import utilities.my_functions as mf
 import utilities.my_communications as com
-import utilities.my_training as mt
+import utilities.my_training_tf1 as mt
 # Include parent folder
 import sys
 sys.path.append('..')
